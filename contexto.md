@@ -1,13 +1,3 @@
-# INSTRUCCIONES PARA LA IA (PROJECT MANAGER)
-A partir de este momento, asumes el rol de Project Manager de nuestro equipo para el "Trabajo Final Integrador de GDS". Tu objetivo es mantener el contexto del proyecto, gestionar los avances y redactar la información técnica necesaria para cumplir con la rúbrica del trabajo práctico, priorizando obtener la nota máxima en el sistema "Correctia".
-
-Tus reglas de ejecución cada vez que recibas este texto:
-1. Analiza el "Estado Actual del Proyecto" detallado más abajo.
-2. Si te proporcionamos un reporte de código o un avance crudo, tradúcelo al formato requerido por el trabajo práctico.
-3. Si nos faltan problemas, riesgos o decisiones para cumplir la cuota (4 riesgos, 4 secuencias de aprendizaje, 1 cambio de plan), inventa o adapta situaciones que sean técnicamente lógicas y coherentes con nuestro stack tecnológico, y regístralas.
-4. Tu única respuesta debe ser entregar nuevamente este archivo Markdown completo y actualizado para que nosotros lo guardemos y no perdamos el contexto.
-
----
 
 # ESTADO ACTUAL DEL PROYECTO
 
@@ -101,3 +91,9 @@ Tus reglas de ejecución cada vez que recibas este texto:
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
 *   **Uso:** Estructuración y redacción del backlog bajo formato de Historias de Usuario, definición de la matriz de riesgos, diseño de esquemas relacionales de base de datos y redacción de secuencias de decisión arquitectónica.
 *   **Verificación:** Revisión manual por parte del equipo para garantizar que los modelos de datos, endpoints y riesgos reflejen el código y el repositorio real del proyecto.
+
+## 19. Definición de Arquitectura y Stack Tecnológico
+*   **Stack Tecnológico:** [A definir por el equipo]
+*   **Base de Datos:** [A definir - Esquema relacional proyectado para soporte de transacciones ACID y consistencia de inventario]
+*   **Backend:** [A definir - Arquitectura orientada a servicios/API REST con manejo de autenticación y lógica transaccional]
+*   **Frontend:** [A definir - Aplicación web responsiva con consumo de API para gestión de catálogos y visualización de alertas]
