@@ -331,7 +331,8 @@ back/
             ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
             ├── config/
             │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
-            │   └── SecurityConfig.java   # Configuración de endpoints públicos/protegidos y BCrypt
+            │   ├── SecurityConfig.java   # Configuración de endpoints públicos/protegidos y BCrypt
+            │   └── DataInitializer.java  # Carga automática de usuarios y categorías de prueba al arrancar
             ├── security/
             │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
             │   ├── JwtAuthenticationFilter.java # Filtro que extrae el token en cada petición HTTP
@@ -368,5 +369,15 @@ back/
                 ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
                 └── CategoriaController.java       # Endpoints /api/categorias
 ```
+
+### 22.3 Credenciales Iniciales de Prueba (Data Seeder)
+
+Al arrancar el backend por primera vez, `DataInitializer` detecta si la base de datos está vacía e inserta automáticamente:
+
+| Usuario | Contraseña | Rol | Acceso |
+|:---|:---|:---|:---|
+| `admin` | `admin123` | `ADMIN` | Acceso total (Catálogo, Movimientos, Categorías, Reportes) |
+| `operador` | `operador123` | `OPERADOR` | Acceso operativo (Ver catálogo, registrar ingresos y egresos de stock) |
+
 
 
