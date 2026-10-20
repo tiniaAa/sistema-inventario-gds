@@ -93,7 +93,142 @@
 *   **Verificación:** Revisión manual por parte del equipo para garantizar que los modelos de datos, endpoints y riesgos reflejen el código y el repositorio real del proyecto.
 
 ## 19. Definición de Arquitectura y Stack Tecnológico
-*   **Stack Tecnológico:** [A definir por el equipo]
-*   **Base de Datos:** [A definir - Esquema relacional proyectado para soporte de transacciones ACID y consistencia de inventario]
-*   **Backend:** [A definir - Arquitectura orientada a servicios/API REST con manejo de autenticación y lógica transaccional]
-*   **Frontend:** [A definir - Aplicación web responsiva con consumo de API para gestión de catálogos y visualización de alertas]
+
+### 19.1 Stack Tecnológico Específico
+*   **Frontend:** React (Vite, JavaScript/TypeScript, React Router DOM, Axios, TailwindCSS o Bootstrap).
+*   **Backend:** Java 17/21 con Spring Boot 3.x:
+    *   **Spring Web:** Creación de controladores REST y endpoints HTTP.
+    *   **Spring Security + jjwt:** Autenticación Stateless basada en tokens Bearer JWT y protección de endpoints según roles (`ROLE_ADMIN`, `ROLE_OPERADOR`).
+    *   **Spring Data JPA / Hibernate:** Mapeo objeto-relacional (ORM), repositorios y control de transacciones.
+    *   **Validation (Hibernate Validator):** Validación declarativa de datos de entrada en DTOs (`@NotNull`, `@Size`, `@PositiveOrZero`).
+*   **Base de Datos:** PostgreSQL 15+ (Gestión de restricciones relacionales, soporte de transacciones ACID con niveles de aislamiento y funciones de agregación).
+*   **Herramientas de Build y Entorno:** Maven/Gradle en backend, Node.js + npm en frontend, Docker (opcional para levantar la base de datos PostgreSQL local).
+
+---
+
+## 20. Modelo de Datos Relacional (PostgreSQL)
+
+### 20.1 Diagrama Entidad-Relación
+
+```mermaid
+erDiagram
+    USUARIOS ||--o{ MOVIMIENTOS_STOCK : "registra"
+    CATEGORIAS ||--o{ PRODUCTOS : "clasifica"
+    PRODUCTOS ||--o{ MOVIMIENTOS_STOCK : "afecta"
+
+    USUARIOS {
+        bigint id PK
+        varchar username UK
+        varchar password_hash
+        varchar nombre_completo
+        varchar email UK
+        varchar rol
+        boolean activo
+        timestamp fecha_creacion
+    }
+
+    CATEGORIAS {
+        bigint id PK
+        varchar nombre UK
+        varchar descripcion
+        boolean activo
+    }
+
+    PRODUCTOS {
+        bigint id PK
+        varchar sku UK
+        varchar nombre
+        text descripcion
+        bigint categoria_id FK
+        numeric precio_unitario
+        integer stock_actual
+        integer stock_minimo
+        boolean activo
+        timestamp fecha_creacion
+        timestamp fecha_actualizacion
+    }
+
+    MOVIMIENTOS_STOCK {
+        bigint id PK
+        bigint producto_id FK
+        bigint usuario_id FK
+        varchar tipo_movimiento
+        integer cantidad
+        integer stock_anterior
+        integer stock_posterior
+        varchar motivo
+        timestamp fecha_movimiento
+    }
+```
+
+### 20.2 Definición Detallada de Tablas y Restricciones
+
+1.  **Tabla: `usuarios`**
+    *   `id`: `BIGSERIAL PRIMARY KEY`
+    *   `username`: `VARCHAR(50) UNIQUE NOT NULL`
+    *   `password_hash`: `VARCHAR(255) NOT NULL` (Hash BCrypt)
+    *   `nombre_completo`: `VARCHAR(100) NOT NULL`
+    *   `email`: `VARCHAR(100) UNIQUE NOT NULL`
+    *   `rol`: `VARCHAR(20) NOT NULL CHECK (rol IN ('ADMIN', 'OPERADOR'))`
+    *   `activo`: `BOOLEAN NOT NULL DEFAULT TRUE` (Baja lógica)
+    *   `fecha_creacion`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`
+
+2.  **Tabla: `categorias`**
+    *   `id`: `BIGSERIAL PRIMARY KEY`
+    *   `nombre`: `VARCHAR(50) UNIQUE NOT NULL`
+    *   `descripcion`: `VARCHAR(255)`
+    *   `activo`: `BOOLEAN NOT NULL DEFAULT TRUE` (Baja lógica para no romper asociaciones pasadas)
+
+3.  **Tabla: `productos`**
+    *   `id`: `BIGSERIAL PRIMARY KEY`
+    *   `sku`: `VARCHAR(50) UNIQUE NOT NULL` (Código identificador o de barras único)
+    *   `nombre`: `VARCHAR(100) NOT NULL`
+    *   `descripcion`: `TEXT`
+    *   `categoria_id`: `BIGINT NOT NULL REFERENCES categorias(id) ON DELETE RESTRICT`
+    *   `precio_unitario`: `NUMERIC(12, 2) NOT NULL CHECK (precio_unitario >= 0)`
+    *   `stock_actual`: `INTEGER NOT NULL DEFAULT 0 CHECK (stock_actual >= 0)` (Restricción crítica: impide saldos negativos)
+    *   `stock_minimo`: `INTEGER NOT NULL DEFAULT 5 CHECK (stock_minimo >= 0)` (Umbral para alertas automáticas)
+    *   `activo`: `BOOLEAN NOT NULL DEFAULT TRUE` (Baja lógica: no se borra físicamente para preservar auditorías)
+    *   `fecha_creacion`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`
+    *   `fecha_actualizacion`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`
+
+4.  **Tabla: `movimientos_stock` (Auditoría inmutable)**
+    *   `id`: `BIGSERIAL PRIMARY KEY`
+    *   `producto_id`: `BIGINT NOT NULL REFERENCES productos(id) ON DELETE RESTRICT`
+    *   `usuario_id`: `BIGINT NOT NULL REFERENCES usuarios(id) ON DELETE RESTRICT`
+    *   `tipo_movimiento`: `VARCHAR(20) NOT NULL CHECK (tipo_movimiento IN ('INGRESO', 'EGRESO', 'AJUSTE_MERMA', 'AJUSTE_SOBRANTE'))`
+    *   `cantidad`: `INTEGER NOT NULL CHECK (cantidad > 0)`
+    *   `stock_anterior`: `INTEGER NOT NULL CHECK (stock_anterior >= 0)`
+    *   `stock_posterior`: `INTEGER NOT NULL CHECK (stock_posterior >= 0)`
+    *   `motivo`: `VARCHAR(255) NOT NULL` (Ej: 'Remito proveedor #104', 'Venta orden #552', 'Rotura en depósito')
+    *   `fecha_movimiento`: `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP`
+    *   *Regla de diseño:* Es una tabla append-only (solo `INSERT`). Prohibido ejecutar `UPDATE` o `DELETE` sobre esta tabla.
+
+---
+
+## 21. Mecánica de Trabajo entre Capas (Arquitectura Operativa)
+
+### 21.1 Base de Datos (PostgreSQL)
+*   **Garantía de Consistencia (ACID):** Maneja transacciones con nivel de aislamiento estándar `READ COMMITTED`.
+*   **Integridad Referencial:** Reglas `ON DELETE RESTRICT` en claves foráneas impiden borrar categorías o productos vinculados a movimientos históricos.
+*   **Regla de Oro de Stock:** La restricción `CHECK (stock_actual >= 0)` actúa como última línea de defensa ante cualquier intento de egreso que supere la existencia real.
+
+### 21.2 Backend (Java + Spring Boot)
+*   **Arquitectura en Capas:**
+    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`), recibe DTOs validados con `@Valid` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 400, 401, 403, 404).
+    *   `Service`: Contiene la lógica de negocio. Para movimientos de stock utiliza métodos anotados con `@Transactional`. En la consulta del producto aplica bloqueo pesimista (`@Lock(LockModeType.PESSIMISTIC_WRITE)`) para evitar condiciones de carrera si dos operadores registran egresos concurrentes.
+    *   `Repository`: Interfaces que extienden de `JpaRepository<T, ID>` para operaciones CRUD y consultas derivadas con `Pageable` para la paginación del lado del servidor.
+    *   `Security`: Configuración de `SecurityFilterChain` con política `SessionCreationPolicy.STATELESS` y filtro JWT personalizado (`JwtAuthenticationFilter`) que extrae el token del header `Authorization: Bearer <token>`, autenticando el contexto de seguridad.
+*   **CORS:** Bean centralizado de `CorsConfigurationSource` habilitando orígenes autorizados (cliente React en desarrollo y producción).
+
+### 21.3 Frontend (React)
+*   **Gestión de Estado y Sesión:**
+    *   `AuthContext`: Provee el estado global del usuario logueado, sus roles (`ADMIN` u `OPERADOR`) y almacena el JWT en memoria / `localStorage`.
+    *   Rutas protegidas mediante componentes envolventes (`<ProtectedRoute roles={['ADMIN']} />`).
+*   **Capa de Servicios HTTP:**
+    *   Instancia centralizada de Axios con interceptor de petición (inyecta automáticamente `headers.Authorization = Bearer ${token}`) e interceptor de respuesta (captura errores 401/403 para redireccionar al login si el token expiró).
+*   **Módulos de Vista:**
+    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas.
+    *   *Operaciones de Depósito:* Formularios modales para registrar ingresos y egresos rápidos validando cantidades antes de enviar.
+    *   *Dashboard / Alertas:* Indicadores visuales en rojo cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
+
