@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Proyecto - StockMaster (GDS)</title>
+  <!-- TailwindCSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background-color: #ffffff !important; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+
+  <!-- Barra Superior -->
+  <header class="bg-slate-900 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <span class="bg-indigo-600 text-xs font-bold uppercase px-2.5 py-1 rounded-full tracking-wider">Reporte de Avance &amp; KPIs</span>
+          <span class="text-slate-400 text-sm">StockMaster — Gestión de Inventario</span>
+        </div>
+        <h1 class="text-2xl md:text-3xl font-bold mt-1">Tablero de Control del Proyecto (Dashboard)</h1>
+        <p class="text-slate-400 text-sm mt-1">
+          Repositorio Oficial: 
+          <a href="https://github.com/tiniaAa/sistema-inventario-gds" target="_blank" rel="noopener noreferrer" class="text-indigo-400 underline hover:text-indigo-300">
+            github.com/tiniaAa/sistema-inventario-gds
+          </a>
+        </p>
+      </div>
+      <div class="flex items-center gap-3 no-print">
+        <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2.5 rounded-lg shadow transition flex items-center gap-2 text-sm cursor-pointer">
+          🖨️ Exportar Artefacto a PDF
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+    <!-- 01. Datos de Contexto -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <div class="flex items-center justify-between border-b pb-3 mb-4">
+        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+          <span>📋</span> 1. Contexto Operativo y Equipo de Desarrollo
+        </h2>
+        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">Gestión del Desarrollo de Software (UTN)</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200/80">
+          <p class="text-slate-500 font-medium text-xs uppercase tracking-wider">Producto &amp; Beneficio Meta</p>
+          <p class="font-bold text-slate-800 mt-1">Web App "StockMaster"</p>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">-60% tiempos de carga y alertas tempranas de punto de reorden.</p>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200/80">
+          <p class="text-slate-500 font-medium text-xs uppercase tracking-wider">Equipo Responsable</p>
+          <ul class="mt-1 space-y-1 text-xs text-slate-700">
+            <li><strong>@tiniaAa:</strong> Project Lead / Backend / Seguridad</li>
+            <li><strong>@mateomujica:</strong> Frontend / Catálogo</li>
+            <li><strong>@iFaustoo:</strong> Vistas / Auditoría / Reportes</li>
+          </ul>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200/80">
+          <p class="text-slate-500 font-medium text-xs uppercase tracking-wider">Stack Tecnológico</p>
+          <p class="font-bold text-slate-800 mt-1">React + Spring Boot 3 + PostgreSQL</p>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">JWT (BCrypt), JPA/Hibernate y Server-Side Pagination.</p>
+        </div>
+        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200/80">
+          <p class="text-slate-500 font-medium text-xs uppercase tracking-wider">Restricciones Operativas</p>
+          <p class="font-bold text-slate-800 mt-1">10 hs/semana por integrante</p>
+          <p class="text-xs text-slate-600 mt-1 leading-relaxed">Plazo estricto cuatrimestral y capa gratuita de despliegue.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02. Tarjetas de KPIs Principales con Semáforos -->
+    <section>
+      <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <span>🚦</span> 2. Indicadores Clave de Desempeño (KPIs Seleccionados)
+      </h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+
+        <!-- KPI 1 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold uppercase text-slate-400">KPI 1 · Productividad</span>
+              <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800">🟡 En Inicio</span>
+            </div>
+            <h3 class="font-bold text-slate-800 mt-2 text-sm">Avance del Backlog (DoD)</h3>
+            <p class="text-3xl font-extrabold text-slate-900 mt-2">0 / 12 <span class="text-sm font-normal text-slate-500">HU (0%)</span></p>
+          </div>
+          <div class="mt-4">
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-amber-500 h-2.5" style="width: 5%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">12 HU pendientes de merge final en rama principal.</p>
+          </div>
+        </div>
+
+        <!-- KPI 2 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold uppercase text-slate-400">KPI 2 · Tiempo/Esfuerzo</span>
+              <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">🟢 Desvío 0%</span>
+            </div>
+            <h3 class="font-bold text-slate-800 mt-2 text-sm">Story Points Consumidos</h3>
+            <p class="text-3xl font-extrabold text-slate-900 mt-2">0 / 80 <span class="text-sm font-normal text-slate-500">SP</span></p>
+          </div>
+          <div class="mt-4">
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-600 h-2.5" style="width: 47.5%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Etapa 1 en proceso (38 SP) · Etapa 2 pendiente (42 SP).</p>
+          </div>
+        </div>
+
+        <!-- KPI 3 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold uppercase text-slate-400">KPI 3 · Capacidad</span>
+              <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-800">🟡 Atención</span>
+            </div>
+            <h3 class="font-bold text-slate-800 mt-2 text-sm">Carga por Desarrollador</h3>
+            <p class="text-3xl font-extrabold text-slate-900 mt-2">4 HU <span class="text-sm font-normal text-slate-500">/ miembro</span></p>
+          </div>
+          <div class="mt-4">
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-2.5" style="width: 100%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">10 hs/sem c/u. @tiniaAa concentra 3 HU de prioridad Alta.</p>
+          </div>
+        </div>
+
+        <!-- KPI 4 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold uppercase text-slate-400">KPI 4 · Calidad Técnica</span>
+              <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">🟢 Óptimo</span>
+            </div>
+            <h3 class="font-bold text-slate-800 mt-2 text-sm">Latencia GET /productos</h3>
+            <p class="text-3xl font-extrabold text-emerald-600 mt-2">&lt; 100 <span class="text-sm font-normal text-slate-500">ms</span></p>
+          </div>
+          <div class="mt-4">
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-2.5" style="width: 97%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">Reducido desde &gt;3.000 ms (2.000 ítems) con Server-Side Pagination.</p>
+          </div>
+        </div>
+
+        <!-- KPI 5 -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center">
+              <span class="text-[11px] font-bold uppercase text-slate-400">KPI 5 · Riesgos y Alcance</span>
+              <span class="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-100 text-emerald-800">🟢 100% Cubierto</span>
+            </div>
+            <h3 class="font-bold text-slate-800 mt-2 text-sm">Mitigación de Riesgos</h3>
+            <p class="text-3xl font-extrabold text-slate-900 mt-2">4 / 4 <span class="text-sm font-normal text-slate-500">Riesgos</span></p>
+          </div>
+          <div class="mt-4">
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-emerald-500 h-2.5" style="width: 100%"></div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">HU 12 ajustada de PDF a CSV por desvío del doble de tiempo.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 03. Gráficos Visuales -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div>
+          <h3 class="font-bold text-slate-800 text-sm mb-1">Esfuerzo por Etapa (80 Story Points)</h3>
+          <p class="text-xs text-slate-500 mb-4">Distribución del esfuerzo planificado</p>
+        </div>
+        <div class="relative h-64">
+          <canvas id="etapasChart"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div>
+          <h3 class="font-bold text-slate-800 text-sm mb-1">Backlog por Prioridad y Responsable</h3>
+          <p class="text-xs text-slate-500 mb-4">Carga de trabajo por miembro (12 HU)</p>
+        </div>
+        <div class="relative h-64">
+          <canvas id="equipoChart"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+        <div>
+          <h3 class="font-bold text-slate-800 text-sm mb-1">Impacto de Optimización de Latencia</h3>
+          <p class="text-xs text-slate-500 mb-4">Tiempo de respuesta en milisegundos (dataset 2.000 ítems)</p>
+        </div>
+        <div class="relative h-64">
+          <canvas id="latenciaChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04. Desglose del Backlog -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <span>📊</span> 3. Desglose del Backlog por Etapas y Estado Actual
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-sm">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 text-xs uppercase tracking-wider">
+              <th class="py-3 px-3">ID</th>
+              <th class="py-3 px-3">Historia de Usuario</th>
+              <th class="py-3 px-3">Etapa</th>
+              <th class="py-3 px-3">Prioridad</th>
+              <th class="py-3 px-3">Responsable</th>
+              <th class="py-3 px-3">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200 text-xs">
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-indigo-700">HU-01</td><td class="py-2.5 px-3">Autenticación por roles con credenciales seguras (JWT + BCrypt)</td><td class="py-2.5 px-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">Etapa 1 (En proceso)</span></td><td class="py-2.5 px-3"><span class="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">Alta</span></td><td class="py-2.5 px-3 font-medium">@tiniaAa</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-indigo-700">HU-02</td><td class="py-2.5 px-3">Alta de producto (nombre, SKU, categoría, precio, stock inicial)</td><td class="py-2.5 px-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">Etapa 1 (En proceso)</span></td><td class="py-2.5 px-3"><span class="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">Alta</span></td><td class="py-2.5 px-3 font-medium">@mateomujica</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-indigo-700">HU-03</td><td class="py-2.5 px-3">Modificación de producto (datos comerciales y descripción)</td><td class="py-2.5 px-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">Etapa 1 (En proceso)</span></td><td class="py-2.5 px-3"><span class="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-semibold">Media</span></td><td class="py-2.5 px-3 font-medium">@mateomujica</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-indigo-700">HU-04</td><td class="py-2.5 px-3">Baja lógica de producto (activo = false para preservar auditorías)</td><td class="py-2.5 px-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">Etapa 1 (En proceso)</span></td><td class="py-2.5 px-3"><span class="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-semibold">Media</span></td><td class="py-2.5 px-3 font-medium">@mateomujica</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-indigo-700">HU-05</td><td class="py-2.5 px-3">Listado y búsqueda por nombre, SKU o categoría con paginación</td><td class="py-2.5 px-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">Etapa 1 (En proceso)</span></td><td class="py-2.5 px-3"><span class="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">Alta</span></td><td class="py-2.5 px-3 font-medium">@iFaustoo</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-indigo-700">HU-06</td><td class="py-2.5 px-3">Gestión de categorías (crear, editar y listar)</td><td class="py-2.5 px-3"><span class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-medium">Etapa 1 (En proceso)</span></td><td class="py-2.5 px-3"><span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">Baja</span></td><td class="py-2.5 px-3 font-medium">@mateomujica</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-slate-600">HU-07</td><td class="py-2.5 px-3">Ingreso de stock asociado a remito o proveedor</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Etapa 2 (Pendiente)</span></td><td class="py-2.5 px-3"><span class="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">Alta</span></td><td class="py-2.5 px-3 font-medium">@tiniaAa</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-slate-600">HU-08</td><td class="py-2.5 px-3">Egreso de stock con motivo (venta, traslado) y bloqueo pesimista</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Etapa 2 (Pendiente)</span></td><td class="py-2.5 px-3"><span class="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">Alta</span></td><td class="py-2.5 px-3 font-medium">@tiniaAa</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-slate-600">HU-09</td><td class="py-2.5 px-3">Ajuste manual por merma/pérdida justificada</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Etapa 2 (Pendiente)</span></td><td class="py-2.5 px-3"><span class="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-semibold">Media</span></td><td class="py-2.5 px-3 font-medium">@tiniaAa</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-slate-600">HU-10</td><td class="py-2.5 px-3">Alertas visuales de stock mínimo (stock_actual &lt;= stock_minimo)</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Etapa 2 (Pendiente)</span></td><td class="py-2.5 px-3"><span class="text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded font-semibold">Alta</span></td><td class="py-2.5 px-3 font-medium">@iFaustoo</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-slate-600">HU-11</td><td class="py-2.5 px-3">Historial cronológico inmutable de movimientos (auditoría)</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Etapa 2 (Pendiente)</span></td><td class="py-2.5 px-3"><span class="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-semibold">Media</span></td><td class="py-2.5 px-3 font-medium">@iFaustoo</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+            <tr class="hover:bg-slate-50"><td class="py-2.5 px-3 font-bold text-slate-600">HU-12</td><td class="py-2.5 px-3">Exportación de inventario valorizado a CSV (replanificado desde PDF)</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Etapa 2 (Pendiente)</span></td><td class="py-2.5 px-3"><span class="text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-semibold">Baja</span></td><td class="py-2.5 px-3 font-medium">@iFaustoo</td><td class="py-2.5 px-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded">Pendiente</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 05. Matriz de Control de Riesgos -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+        <span>🛡️</span> 4. Matriz de Control de Riesgos y Decisiones Técnicas
+      </h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 border-b border-slate-200 uppercase tracking-wider">
+              <th class="py-3 px-3">Riesgo / Problema Detectado</th>
+              <th class="py-3 px-3">Impacto Potencial</th>
+              <th class="py-3 px-3">Medida de Mitigación / Decisión Implementada</th>
+              <th class="py-3 px-3">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-200">
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-slate-800">1. Concurrencia en stock (Race conditions)</td>
+              <td class="py-2.5 px-3 text-slate-600">Egresos simultáneos generando stock negativo e inconsistencias.</td>
+              <td class="py-2.5 px-3 text-slate-700"><code>@Transactional</code>, bloqueo pesimista (<code>PESSIMISTIC_WRITE</code>) y <code>CHECK (stock_actual &gt;= 0)</code>.</td>
+              <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">🟢 Mitigado en diseño</span></td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-slate-800">2. Conflictos de Merge en Git</td>
+              <td class="py-2.5 px-3 text-slate-600">Sobrescritura de código al trabajar en paralelo sobre la entidad Producto.</td>
+              <td class="py-2.5 px-3 text-slate-700">GitHub Flow estricto, ramas cortas <code>feature/HU-xx</code> y Pull Requests con code review obligatorio.</td>
+              <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">🟢 Política Activa</span></td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-slate-800">3. Pérdida de integridad referencial</td>
+              <td class="py-2.5 px-3 text-slate-600">Errores de clave foránea o pérdida de auditoría al borrar productos con movimientos.</td>
+              <td class="py-2.5 px-3 text-slate-700">Patrón de baja lógica (<code>activo = false</code>), <code>ON DELETE RESTRICT</code> y tabla append-only.</td>
+              <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">🟢 Mitigado en BD</span></td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-slate-800">4. Desborde de alcance y tiempos (HU 12)</td>
+              <td class="py-2.5 px-3 text-slate-600">Librerías de PDF consumieron el doble de lo estimado, arriesgando la Etapa 2.</td>
+              <td class="py-2.5 px-3 text-slate-700">Priorización MoSCoW: reemplazo de renderizado PDF por exportación nativa a CSV vía streaming.</td>
+              <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">🟢 Replanificado</span></td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-3 font-semibold text-slate-800">5. Vulnerabilidad de sesiones</td>
+              <td class="py-2.5 px-3 text-slate-600">Falta de separación segura entre Administrador y Operador en revisión inicial.</td>
+              <td class="py-2.5 px-3 text-slate-700">Migración a autenticación stateless con JWT, hash BCrypt y middleware de validación de roles.</td>
+              <td class="py-2.5 px-3"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">🟢 Implementado</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 06. Cierre Reflexivo de la Unidad -->
+    <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+      <h2 class="text-lg font-bold text-slate-900 mb-2 flex items-center gap-2">
+        <span>💬</span> 5. Cierre Reflexivo de la Unidad
+      </h2>
+      <p class="text-xs text-slate-500 italic mb-6">"Lo que se mide, se gestiona. Lo que se gestiona, se mejora." — Peter Drucker</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
+        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 mb-2 text-sm flex items-center gap-1.5">
+              <span>🎯</span> ¿Indicadores útiles vs. irrelevantes?
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Un indicador útil es accionable, medible objetivamente y está directamente alineado con los objetivos del proyecto, mientras que uno irrelevante consume tiempo sin aportar valor a las decisiones.
+            </p>
+            <p class="text-xs text-slate-600 leading-relaxed mt-2">
+              En StockMaster, medir el tiempo de respuesta del endpoint <code>GET /productos</code> (&lt;100 ms) y el avance estricto según el Definition of Done (0/12 HU) son útiles porque validan escalabilidad real y entregables terminados. Por el contrario, contar "líneas de código escritas" sería irrelevante frente al límite de 10 hs semanales por integrante.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 mb-2 text-sm flex items-center gap-1.5">
+              <span>⚠️</span> ¿Cómo anticipan riesgos los KPIs?
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Los KPIs funcionan como señales tempranas de alerta cuyas desviaciones negativas permiten intervenir antes de que los problemas escalen a crisis bloqueantes.
+            </p>
+            <p class="text-xs text-slate-600 leading-relaxed mt-2">
+              Monitorear el esfuerzo consumido permitió detectar que el renderizado de PDF duplicaba la estimación original en la Etapa 2, disparando a tiempo la decisión de cambiar a CSV antes de comprometer las funcionalidades centrales. Asimismo, visibilizar que @tiniaAa concentra 3 de las 6 historias de prioridad Alta alerta al equipo para balancear soporte en revisiones de código.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-5 rounded-lg border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-slate-800 mb-2 text-sm flex items-center gap-1.5">
+              <span>🔄</span> ¿Reportes + Indicadores = mejor comunicación?
+            </h3>
+            <p class="text-xs text-slate-600 leading-relaxed">
+              La combinación conforma un sistema integral donde los números muestran el <em>"qué"</em> y los reportes explican el <em>"por qué"</em> y el <em>"cómo"</em>.
+            </p>
+            <p class="text-xs text-slate-600 leading-relaxed mt-2">
+              El indicador muestra el "qué" (0/12 HU finalizadas y 0/80 SP consumidos), mientras que el reporte narrativo explica el "por qué": la Etapa 1 ya está en proceso y el equipo resolvió cimientos críticos de arquitectura (seguridad JWT con BCrypt, transacciones atómicas con bloqueo pesimista y paginación en servidor) indispensables para que las HU superen el Definition of Done.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-400 py-4 no-print border-t border-slate-200">
+      <p>StockMaster © 2026 — Proyecto de Gestión del Desarrollo de Software (UTN TUP)</p>
+      <p class="mt-1">Diseñado para seguimiento académico y control de calidad operativa.</p>
+    </footer>
+
+  </main>
+
+  <script>
+    // Gráfico 1: Story Points por Etapa
+    new Chart(document.getElementById('etapasChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Etapa 1: Core y Catálogo (38 SP - En proceso)', 'Etapa 2: Movimientos y Reportes (42 SP - Pendiente)'],
+        datasets: [{
+          data: [38, 42],
+          backgroundColor: ['#4f46e5', '#cbd5e1'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } 
+        } 
+      }
+    });
+
+    // Gráfico 2: Distribución de HU por Integrante y Prioridad
+    new Chart(document.getElementById('equipoChart'), {
+      type: 'bar',
+      data: {
+        labels: ['@tiniaAa', '@mateomujica', '@iFaustoo'],
+        datasets: [
+          { label: 'Alta', data: [3, 1, 2], backgroundColor: '#ef4444' },
+          { label: 'Media', data: [1, 2, 1], backgroundColor: '#f59e0b' },
+          { label: 'Baja', data: [0, 1, 1], backgroundColor: '#10b981' }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { 
+          x: { stacked: true, grid: { display: false } }, 
+          y: { stacked: true, beginAtZero: true, max: 5, ticks: { stepSize: 1 } } 
+        },
+        plugins: { 
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } 
+        }
+      }
+    });
+
+    // Gráfico 3: Latencia antes vs después de Server-Side Pagination
+    new Chart(document.getElementById('latenciaChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Paginación en Cliente (Antes)', 'Paginación en Servidor (Actual)'],
+        datasets: [{
+          label: 'Tiempo de respuesta (ms)',
+          data: [3000, 100],
+          backgroundColor: ['#f43f5e', '#10b981'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(context) { return context.raw + ' ms'; }
+            }
+          }
+        },
+        scales: { 
+          y: { beginAtZero: true, title: { display: true, text: 'Milisegundos (ms)' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
