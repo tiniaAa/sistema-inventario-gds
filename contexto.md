@@ -249,3 +249,124 @@ erDiagram
     *   *Operaciones de Depósito:* Formularios modales para registrar ingresos y egresos rápidos validando cantidades antes de enviar.
     *   *Dashboard / Alertas:* Indicadores visuales en rojo cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
 
+---
+
+## 22. Estructura Física del Repositorio y Mapeo de Archivos
+
+El repositorio está organizado como un **Monorepo** dividido en dos módulos independientes (`front` y `back`) con configuración de `.gitignore` en la raíz.
+
+```text
+sistema-inventario-gds/
+├── .gitignore               # Exclusiones de Git (node_modules, target, .env, .class)
+├── contexto.md              # Documentación integral, reglas y estado del proyecto
+├── README.md                # Guía de desarrollo y prompt estandarizado para las IAs
+├── front/                   # Módulo Cliente (SPA en React)
+└── back/                    # Módulo Servidor (API REST en Spring Boot)
+```
+
+### 22.1 Módulo Frontend (`front/`)
+
+#### Tecnologías y Librerías:
+*   **Framework base:** React 18 + Vite 5 (Bundler ultrarrápido).
+*   **Enrutamiento:** `react-router-dom` v6 (Rutas públicas y privadas protegidas por rol).
+*   **Cliente HTTP:** `axios` v1.6 (Instancia configurada con interceptores Bearer y control de errores 401/403).
+*   **Iconografía:** `lucide-react` (Iconos vectoriales modernos y consistentes).
+*   **Estilos:** `tailwindcss` v3 + `postcss` + `autoprefixer` (Tokens de diseño personalizados para estados de stock).
+
+#### Árbol de Archivos y Responsabilidades:
+```text
+front/
+├── index.html                       # HTML base de la aplicación
+├── package.json                     # Scripts (dev, build) y dependencias frontend
+├── postcss.config.js                # Plugins de procesamiento CSS
+├── tailwind.config.js               # Paleta de colores semántica (brand, stock: optimal, warning, danger)
+├── vite.config.js                   # Configuración del servidor de desarrollo (puerto 5173)
+├── README.md                        # Instrucciones de ejecución del frontend
+└── src/
+    ├── main.jsx                     # Punto de entrada de React en el DOM
+    ├── App.jsx                      # Definición de rutas protegidas y Layout principal
+    ├── index.css                    # Directivas Tailwind y utilidades (tabular-nums)
+    ├── api/
+    │   └── axios.js                 # Cliente Axios preconfigurado con token Bearer automático
+    ├── context/
+    │   └── AuthContext.jsx          # Contexto global de autenticación, token y verificación de roles
+    ├── components/
+    │   ├── common/
+    │   │   ├── Badge.jsx            # Badges visuales de estado y StockBadge semántico
+    │   │   └── ProtectedRoute.jsx   # Guardián de rutas autenticadas y filtradas por rol
+    │   └── layout/
+    │       ├── Navbar.jsx           # Barra superior con datos del usuario conectado, rol y logout
+    │       └── Sidebar.jsx          # Menú lateral de navegación con links según rol
+    └── pages/
+        ├── Login.jsx                # Formulario de inicio de sesión con JWT
+        ├── Dashboard.jsx            # Métricas en KPI cards y tabla de alertas de stock mínimo (HU-10)
+        ├── Productos.jsx            # Catálogo con búsqueda reactiva, paginación y soft-delete (HU-02, HU-05)
+        ├── Movimientos.jsx          # Historial y registro de ingresos, egresos y mermas (HU-07, HU-08, HU-11)
+        ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
+        └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
+```
+
+---
+
+### 22.2 Módulo Backend (`back/`)
+
+#### Tecnologías y Librerías:
+*   **Lenguaje y Runtime:** Java 17 LTS.
+*   **Framework:** Spring Boot 3.2.4 (`spring-boot-starter-web`, `spring-boot-starter-data-jpa`, `spring-boot-starter-security`, `spring-boot-starter-validation`).
+*   **Seguridad:** Spring Security 6 + `jjwt` (Java JWT v0.11.5) para autenticación sin estado (*Stateless*).
+*   **Base de Datos:** PostgreSQL 15+ (`org.postgresql:postgresql`).
+*   **Productividad:** `lombok` (Reducción de boilerplate para getters, setters y builders).
+
+#### Árbol de Archivos y Responsabilidades:
+```text
+back/
+├── pom.xml                          # Descriptor Maven con todas las dependencias
+├── README.md                        # Guía de configuración y arranque del backend
+└── src/
+    └── main/
+        ├── resources/
+        │   ├── application.properties # Parámetros de PostgreSQL, Hibernate y clave secreta JWT
+        │   └── schema.sql            # Script DDL de referencia con constraints y relaciones
+        └── java/com/inventario/gds/
+            ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
+            ├── config/
+            │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
+            │   └── SecurityConfig.java   # Configuración de endpoints públicos/protegidos y BCrypt
+            ├── security/
+            │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
+            │   ├── JwtAuthenticationFilter.java # Filtro que extrae el token en cada petición HTTP
+            │   └── CustomUserDetailsService.java# Carga de credenciales y roles desde la BD
+            ├── entity/
+            │   ├── Rol.java              # Enum de roles: ADMIN, OPERADOR
+            │   ├── TipoMovimiento.java   # Enum: INGRESO, EGRESO, AJUSTE_MERMA, AJUSTE_SOBRANTE
+            │   ├── Usuario.java          # Entidad de usuarios con contraseñas hasheadas
+            │   ├── Categoria.java        # Entidad de categorías de productos
+            │   ├── Producto.java         # Entidad con stockActual, stockMinimo y soft-delete
+            │   └── MovimientoStock.java  # Entidad inmutable de auditoría de entradas y salidas
+            ├── repository/
+            │   ├── UsuarioRepository.java       # Consultas por username/email
+            │   ├── CategoriaRepository.java     # Consultas de categorías activas
+            │   ├── ProductoRepository.java      # Bloqueo pesimista (findByIdForUpdate), paginación y alertas
+            │   └── MovimientoStockRepository.java # Historial cronológico de movimientos
+            ├── dto/
+            │   ├── request/
+            │   │   ├── LoginRequest.java         # DTO con username y password validados
+            │   │   ├── ProductoRequestDTO.java   # DTO para alta/edición de producto con validaciones
+            │   │   └── MovimientoRequestDTO.java # DTO para registrar ingresos o egresos
+            │   └── response/
+            │       ├── AuthResponse.java         # Retorna token JWT y datos resumidos del usuario
+            │       └── ProductoResponseDTO.java  # Retorna datos del producto sin exponer la entidad
+            ├── exception/
+            │   ├── ResourceNotFoundException.java   # Excepción HTTP 404 personalizada
+            │   ├── StockInsuficienteException.java  # Excepción HTTP 400 por egreso superior al stock
+            │   └── GlobalExceptionHandler.java      # Controlador centralizado de errores y validaciones
+            ├── service/
+            │   └── MovimientoStockService.java      # Lógica transaccional atómica (@Transactional)
+            └── controller/
+                ├── AuthController.java            # Endpoints /api/auth/login
+                ├── ProductoController.java        # Endpoints /api/productos (CRUD, paginación, alertas)
+                ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
+                └── CategoriaController.java       # Endpoints /api/categorias
+```
+
+
