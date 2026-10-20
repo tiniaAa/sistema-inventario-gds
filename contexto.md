@@ -379,5 +379,13 @@ Al arrancar el backend por primera vez, `DataInitializer` detecta si la base de 
 | `admin` | `admin123` | `ADMIN` | Acceso total (Catálogo, Movimientos, Categorías, Reportes) |
 | `operador` | `operador123` | `OPERADOR` | Acceso operativo (Ver catálogo, registrar ingresos y egresos de stock) |
 
+### 22.4 Requisitos Previos y Orden de Arranque Local
+
+Para que la aplicación funcione correctamente en desarrollo:
+1. **Base de Datos PostgreSQL:** El motor de base de datos debe estar activo en el puerto `5432` con una base creada con el nombre `inventario_db` (usuario `postgres`, contraseña `postgres` por defecto en `application.properties`).
+2. **Arranque del Backend (Primer paso obligatorio):** Debe ejecutarse primero el backend en Java/Spring Boot (`http://localhost:8080`). Al iniciar, Hibernate creará las tablas automáticamente y `DataInitializer` insertará los usuarios de prueba.
+3. **Arranque del Frontend:** Una vez levantado el backend, se ejecuta el cliente React con `npm run dev` (`http://localhost:5173`). Si el backend está apagado, el frontend no podrá comunicarse con la API y mostrará error de conexión de red.
+
+
 
 
