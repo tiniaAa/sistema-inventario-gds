@@ -104,6 +104,23 @@
 *   **Base de Datos:** PostgreSQL 15+ (Gestión de restricciones relacionales, soporte de transacciones ACID con niveles de aislamiento y funciones de agregación).
 *   **Herramientas de Build y Entorno:** Maven/Gradle en backend, Node.js + npm en frontend, Docker (opcional para levantar la base de datos PostgreSQL local).
 
+### 19.2 Guía de Estilo y Sistema de Diseño UI (Regla Estricta para Frontend)
+Para mantener consistencia visual en todos los módulos desarrollados por el equipo y sus IAs, la interfaz debe regirse bajo las siguientes directrices de diseño:
+
+*   **Concepto Visual:** Interfaz tipo Dashboard corporativo / ERP industrial moderno, limpia, funcional y orientada a la eficiencia operativa de almacén (alta densidad de datos sin sobrecarga visual).
+*   **Paleta de Colores Semántica:**
+    *   **Primario / Identidad:** `#1E40AF` (Navy/Azul corporativo) para sidebar, cabeceras y `#2563EB` (Azul eléctrico) para botones principales y estados activos.
+    *   **Stock Normal / Confirmaciones:** `#059669` (Verde esmeralda) con fondo de badge `#DEF7EC` y texto `#03543F`.
+    *   **Alerta Stock Mínimo (Advertencia):** `#D97706` (Ámbar) con fondo `#FEF3C7` y texto `#92400E` (se activa automáticamente cuando `stock_actual <= stock_minimo`).
+    *   **Quiebre de Stock / Egresos / Peligro:** `#DC2626` (Rojo carmesí) con fondo `#FDE8E8` y texto `#9B1C1C` (indica stock en 0 o errores de validación).
+    *   **Fondos y Superficies:** Fondo general `#F8FAFC` (Slate-50), contenedores y tarjetas `#FFFFFF` con bordes sutiles `#E2E8F0` (Slate-200) y sombras suaves (`shadow-sm`).
+    *   **Tipografía y Textos:** Tipografía sans-serif (`Inter`, `system-ui`). Títulos en `#0F172A` (Slate-900), cuerpo en `#334155` (Slate-700) y textos secundarios en `#64748B` (Slate-500).
+*   **Reglas de Componentes y Tablas:**
+    *   **Tablas de Inventario:** Cabeceras con fondo sutil (`bg-slate-100`), texto en mayúsculas pequeñas (`text-xs font-semibold uppercase tracking-wider text-slate-500`). Todas las cifras numéricas (precios, stock, cantidades) deben alinearse a la derecha y utilizar fuente monoespaciada o estilo `tabular-nums`.
+    *   **Estructura de Pantalla:** Layout fijo con barra lateral de navegación izquierda (Sidebar), barra superior fija (Header) con indicador del usuario conectado y su rol (`ADMIN` / `OPERADOR`), y contenedor central con tarjetas de métricas (*KPI cards*) y tablas de datos paginadas.
+    *   **Formularios y Modales:** Las operaciones de ingreso y egreso rápido deben realizarse mediante ventanas modales con fondo oscurecido (*backdrop-blur*), evitando navegar a páginas externas para transacciones operativas comunes.
+    *   **Feedback de Usuario:** Notificaciones emergentes (*Toasts*) temporales en la esquina superior derecha para confirmar transacciones o informar rechazos por stock insuficiente.
+
 ---
 
 ## 20. Modelo de Datos Relacional (PostgreSQL)
