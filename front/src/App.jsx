@@ -2,7 +2,6 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/common/ProtectedRoute';
-import { Sidebar } from './components/layout/Sidebar';
 import { Navbar } from './components/layout/Navbar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
@@ -12,12 +11,9 @@ import { Categorias } from './pages/Categorias';
 import { Reportes } from './pages/Reportes';
 
 const Layout = ({ children }) => (
-  <div className="flex min-h-screen bg-[#f5f5f5]">
-    <Sidebar />
-    <div className="flex-1 flex flex-col min-w-0">
-      <Navbar />
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto">{children}</main>
-    </div>
+  <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
+    <Navbar />
+    <main className="flex-1 p-6 md:p-8 max-w-7xl w-full mx-auto">{children}</main>
   </div>
 );
 
