@@ -1,16 +1,15 @@
 import React from 'react';
 
-export const Badge = ({ children, variant = 'default' }) => {
+export const Badge = ({ children, variant = 'soft' }) => {
   const variants = {
-    optimal: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    warning: 'bg-amber-100 text-amber-800 border-amber-200',
-    danger: 'bg-red-100 text-red-800 border-red-200',
-    info: 'bg-blue-100 text-blue-800 border-blue-200',
-    default: 'bg-slate-100 text-slate-800 border-slate-200'
+    solid: 'bg-[#171717] text-[#fafafa]',
+    soft: 'bg-[#f5f5f5] text-[#171717]',
+    outline: 'bg-transparent text-[#0a0a0a] border border-[#e5e5e5]',
+    destructive: 'bg-transparent text-[#e7000b] border border-[#e5e5e5]',
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border ${variants[variant] || variants.default}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-[18px] text-[12px] font-medium tracking-tight ${variants[variant] || variants.soft}`}>
       {children}
     </span>
   );
@@ -18,10 +17,10 @@ export const Badge = ({ children, variant = 'default' }) => {
 
 export const StockBadge = ({ stockActual, stockMinimo }) => {
   if (stockActual <= 0) {
-    return <Badge variant="danger">Sin Stock (0)</Badge>;
+    return <Badge variant="destructive">Sin Stock (0)</Badge>;
   }
   if (stockActual <= stockMinimo) {
-    return <Badge variant="warning">Crítico ({stockActual})</Badge>;
+    return <Badge variant="solid">Crítico ({stockActual})</Badge>;
   }
-  return <Badge variant="optimal">Óptimo ({stockActual})</Badge>;
+  return <Badge variant="outline">Stock: {stockActual}</Badge>;
 };

@@ -29,26 +29,26 @@ export const Reportes = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Auditoría y Reportes</h1>
-        <p className="text-sm text-slate-500">Exportación de datos de existencias para control contable.</p>
+        <h1 className="text-[30px] font-semibold text-[#0a0a0a] tracking-tight">Auditoría y Reportes</h1>
+        <p className="text-[14px] text-[#737373]">Exportación de datos de existencias para control contable.</p>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-xl">
+      <div className="bg-[#ffffff] p-6 rounded-[24px] border border-[#e5e5e5] shadow-[0_0_0_1px_rgba(23,23,23,0.05),0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] max-w-xl">
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
-            <FileSpreadsheet size={28} />
+          <div className="p-3 bg-[#f5f5f5] text-[#0a0a0a] rounded-[18px] border border-[#e5e5e5]">
+            <FileSpreadsheet size={24} strokeWidth={1.75} />
           </div>
           <div className="flex-1">
-            <h3 className="text-base font-bold text-slate-900">Inventario Completo (CSV)</h3>
-            <p className="text-sm text-slate-500 mt-1">
+            <h3 className="text-[16px] font-semibold text-[#0a0a0a] tracking-tight">Inventario Completo (CSV)</h3>
+            <p className="text-[13px] text-[#737373] mt-1">
               Descarga un archivo CSV con el catálogo completo, precios, stock actual y estado valorizado para balances.
             </p>
             <button
               onClick={exportarCSV}
               disabled={downloading}
-              className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors disabled:opacity-50"
+              className="mt-4 bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors disabled:opacity-50"
             >
-              <Download size={16} />
+              <Download size={15} strokeWidth={1.75} />
               {downloading ? 'Generando archivo...' : 'Exportar CSV'}
             </button>
           </div>

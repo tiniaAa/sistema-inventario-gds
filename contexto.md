@@ -104,22 +104,27 @@
 *   **Base de Datos:** PostgreSQL 15+ (Gestión de restricciones relacionales, soporte de transacciones ACID con niveles de aislamiento y funciones de agregación).
 *   **Herramientas de Build y Entorno:** Maven/Gradle en backend, Node.js + npm en frontend, Docker (opcional para levantar la base de datos PostgreSQL local).
 
-### 19.2 Guía de Estilo y Sistema de Diseño UI (Regla Estricta para Frontend)
-Para mantener consistencia visual en todos los módulos desarrollados por el equipo y sus IAs, la interfaz debe regirse bajo las siguientes directrices de diseño:
+### 19.2 Guía de Estilo y Sistema de Diseño UI (Referencia Obligatoria a DESIGN.md)
+**INSTRUCCIÓN ESTRICTA PARA CUALQUIER IA O DESARROLLADOR:**
+Todo el diseño, la maquetación visual, los componentes interactivos, la paleta de colores y las directrices de interfaz de usuario de este proyecto están especificados de forma exhaustiva e inmutable en el archivo:
+👉 **[DESIGN.md](DESIGN.md)** (ubicado en la raíz del repositorio).
 
-*   **Concepto Visual:** Interfaz tipo Dashboard corporativo / ERP industrial moderno, limpia, funcional y orientada a la eficiencia operativa de almacén (alta densidad de datos sin sobrecarga visual).
-*   **Paleta de Colores Semántica:**
-    *   **Primario / Identidad:** `#1E40AF` (Navy/Azul corporativo) para sidebar, cabeceras y `#2563EB` (Azul eléctrico) para botones principales y estados activos.
-    *   **Stock Normal / Confirmaciones:** `#059669` (Verde esmeralda) con fondo de badge `#DEF7EC` y texto `#03543F`.
-    *   **Alerta Stock Mínimo (Advertencia):** `#D97706` (Ámbar) con fondo `#FEF3C7` y texto `#92400E` (se activa automáticamente cuando `stock_actual <= stock_minimo`).
-    *   **Quiebre de Stock / Egresos / Peligro:** `#DC2626` (Rojo carmesí) con fondo `#FDE8E8` y texto `#9B1C1C` (indica stock en 0 o errores de validación).
-    *   **Fondos y Superficies:** Fondo general `#F8FAFC` (Slate-50), contenedores y tarjetas `#FFFFFF` con bordes sutiles `#E2E8F0` (Slate-200) y sombras suaves (`shadow-sm`).
-    *   **Tipografía y Textos:** Tipografía sans-serif (`Inter`, `system-ui`). Títulos en `#0F172A` (Slate-900), cuerpo en `#334155` (Slate-700) y textos secundarios en `#64748B` (Slate-500).
-*   **Reglas de Componentes y Tablas:**
-    *   **Tablas de Inventario:** Cabeceras con fondo sutil (`bg-slate-100`), texto en mayúsculas pequeñas (`text-xs font-semibold uppercase tracking-wider text-slate-500`). Todas las cifras numéricas (precios, stock, cantidades) deben alinearse a la derecha y utilizar fuente monoespaciada o estilo `tabular-nums`.
-    *   **Estructura de Pantalla:** Layout fijo con barra lateral de navegación izquierda (Sidebar), barra superior fija (Header) con indicador del usuario conectado y su rol (`ADMIN` / `OPERADOR`), y contenedor central con tarjetas de métricas (*KPI cards*) y tablas de datos paginadas.
-    *   **Formularios y Modales:** Las operaciones de ingreso y egreso rápido deben realizarse mediante ventanas modales con fondo oscurecido (*backdrop-blur*), evitando navegar a páginas externas para transacciones operativas comunes.
-    *   **Feedback de Usuario:** Notificaciones emergentes (*Toasts*) temporales en la esquina superior derecha para confirmar transacciones o informar rechazos por stock insuficiente.
+Cualquier IA que genere o modifique código frontend **DEBE leer e interpretar obligatoriamente el archivo `DESIGN.md`** antes de escribir estilos o componentes, y apegarse con precisión milimétrica a sus tokens y reglas:
+1. **Filosofía Acromática / Monocromática (shadcn / Vercel / Linear):**
+   * **Fondo general (Canvas):** `#f5f5f5`
+   * **Tarjetas y modales (Paper):** `#ffffff` con borde hairline de 1px en `#e5e5e5` y sombra sutil apilada (`--shadow-subtle`).
+   * **Superficie de barra lateral (Sidebar Surface):** `#fafafa`
+   * **Textos y títulos (Ink):** `#0a0a0a` (primario), `#171717` (ink soft) y `#737373` (secundario / mid-gray).
+   * **Botón primario:** Fondo oscuro invertido `#0a0a0a`, texto `#fafafa`, radio de 18px.
+   * **Botón secundario / ghost:** Fondo `#f5f5f5`, texto `#0a0a0a`, radio de 18px.
+   * **Inputs:** Fondo `#f5f5f5` en reposo, texto `#0a0a0a`, sin borde en reposo y aro de 1px `#e5e5e5` en foco, radio de 18px.
+   * **Único color de acento cromático:** `#e7000b` (Ember), reservado **exclusivamente** para estados destructivos o de error. Queda estrictamente prohibido introducir paletas azules, verdes o degradados.
+2. **Jerarquía Estricta de Bordes Redondeados (Border Radius):**
+   * **18px (`rounded-[18px]`):** Para todos los elementos interactivos (botones, inputs y badges cápsula).
+   * **24px (`rounded-[24px]`):** Exclusivamente para contenedores y tarjetas (`cards`).
+   * Queda prohibido usar esquinas cuadradas o radios distintos a 18px y 24px.
+3. **Tipografía:**
+   * Basada en `Geist` (o `Inter` como sustituto del sistema), con tracking ajustado (`-0.05em` en display, `-0.025em` en encabezados). Tablas y cifras con estilo monoespaciado o `tabular-nums`.
 
 ---
 
@@ -259,6 +264,7 @@ El repositorio está organizado como un **Monorepo** dividido en dos módulos in
 sistema-inventario-gds/
 ├── .gitignore               # Exclusiones de Git (node_modules, target, .env, .class)
 ├── contexto.md              # Documentación integral, reglas y estado del proyecto
+├── DESIGN.md                # Sistema de diseño UI normativo (reglas de diseño para la IA)
 ├── README.md                # Guía de desarrollo y prompt estandarizado para las IAs
 ├── front/                   # Módulo Cliente (SPA en React)
 └── back/                    # Módulo Servidor (API REST en Spring Boot)
@@ -270,16 +276,16 @@ sistema-inventario-gds/
 *   **Framework base:** React 18 + Vite 5 (Bundler ultrarrápido).
 *   **Enrutamiento:** `react-router-dom` v6 (Rutas públicas y privadas protegidas por rol).
 *   **Cliente HTTP:** `axios` v1.6 (Instancia configurada con interceptores Bearer y control de errores 401/403).
-*   **Iconografía:** `lucide-react` (Iconos vectoriales modernos y consistentes).
-*   **Estilos:** `tailwindcss` v3 + `postcss` + `autoprefixer` (Tokens de diseño personalizados para estados de stock).
+*   **Iconografía:** `lucide-react` (Iconos vectoriales minimalistas y funcionales a 1.5–2px de grosor).
+*   **Estilos:** `tailwindcss` v3 + `postcss` + `autoprefixer` (Tokens acromáticos de `DESIGN.md`: canvas, paper, ink, hairline, ember).
 
 #### Árbol de Archivos y Responsabilidades:
 ```text
 front/
-├── index.html                       # HTML base de la aplicación
+├── index.html                       # HTML base de la aplicación (Geist/Inter en canvas #f5f5f5)
 ├── package.json                     # Scripts (dev, build) y dependencias frontend
 ├── postcss.config.js                # Plugins de procesamiento CSS
-├── tailwind.config.js               # Paleta de colores semántica (brand, stock: optimal, warning, danger)
+├── tailwind.config.js               # Tokens de diseño de DESIGN.md (18px/24px radii, colores acromáticos)
 ├── vite.config.js                   # Configuración del servidor de desarrollo (puerto 5173)
 ├── README.md                        # Instrucciones de ejecución del frontend
 └── src/

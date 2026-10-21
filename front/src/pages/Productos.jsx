@@ -33,34 +33,34 @@ export const Productos = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Catálogo de Productos</h1>
-          <p className="text-sm text-slate-500">Gestión de artículos, precios y niveles de stock.</p>
+          <h1 className="text-[30px] font-semibold text-[#0a0a0a] tracking-tight">Catálogo de Productos</h1>
+          <p className="text-[14px] text-[#737373]">Gestión de artículos, precios y niveles de stock.</p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm transition-colors">
-          <Plus size={16} />
+        <button className="bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors">
+          <Plus size={16} strokeWidth={1.75} />
           Nuevo Producto
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-[#ffffff] rounded-[24px] border border-[#e5e5e5] shadow-[0_0_0_1px_rgba(23,23,23,0.05),0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden">
         {/* Barra de Búsqueda y Filtros */}
-        <div className="p-4 border-b border-slate-200 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="p-4 border-b border-[#e5e5e5] flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full sm:w-80">
-            <Search size={18} className="absolute left-3 top-2.5 text-slate-400" />
+            <Search size={16} strokeWidth={1.75} className="absolute left-3.5 top-2.5 text-[#737373]" />
             <input
               type="text"
               placeholder="Buscar por nombre, SKU o categoría..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-[#f5f5f5] text-[#0a0a0a] placeholder-[#737373] border border-transparent focus:border-[#e5e5e5] rounded-[18px] text-[14px] focus:outline-none transition-colors"
             />
           </div>
         </div>
 
         {/* Tabla */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-100 text-xs uppercase text-slate-500 font-semibold">
+          <table className="w-full text-left text-[14px]">
+            <thead className="bg-[#fafafa] text-[12px] uppercase text-[#737373] font-medium">
               <tr>
                 <th className="px-4 py-3">SKU</th>
                 <th className="px-4 py-3">Nombre</th>
@@ -71,21 +71,21 @@ export const Productos = () => {
                 <th className="px-4 py-3 text-center">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-[#e5e5e5]">
               {loading ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-slate-500 text-sm">Cargando catálogo...</td>
+                  <td colSpan="7" className="text-center py-8 text-[#737373] text-[14px]">Cargando catálogo...</td>
                 </tr>
               ) : productos.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="text-center py-8 text-slate-500 text-sm">No se encontraron productos.</td>
+                  <td colSpan="7" className="text-center py-8 text-[#737373] text-[14px]">No se encontraron productos.</td>
                 </tr>
               ) : (
                 productos.map((prod) => (
-                  <tr key={prod.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 font-mono text-xs">{prod.sku}</td>
-                    <td className="px-4 py-3 font-medium text-slate-800">{prod.nombre}</td>
-                    <td className="px-4 py-3 text-slate-600">{prod.categoria?.nombre || '-'}</td>
+                  <tr key={prod.id} className="hover:bg-[#fafafa]">
+                    <td className="px-4 py-3 font-mono text-[12px] text-[#737373]">{prod.sku}</td>
+                    <td className="px-4 py-3 font-medium text-[#0a0a0a]">{prod.nombre}</td>
+                    <td className="px-4 py-3 text-[#737373]">{prod.categoria?.nombre || '-'}</td>
                     <td className="px-4 py-3 text-right tabular-nums font-mono">${Number(prod.precioUnitario).toFixed(2)}</td>
                     <td className="px-4 py-3 text-right tabular-nums font-semibold">{prod.stockActual}</td>
                     <td className="px-4 py-3 text-center">
@@ -93,11 +93,11 @@ export const Productos = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="text-slate-400 hover:text-blue-600 transition-colors" title="Editar">
-                          <Edit2 size={16} />
+                        <button className="text-[#737373] hover:text-[#0a0a0a] transition-colors" title="Editar">
+                          <Edit2 size={15} strokeWidth={1.75} />
                         </button>
-                        <button className="text-slate-400 hover:text-red-600 transition-colors" title="Baja lógica">
-                          <Trash2 size={16} />
+                        <button className="text-[#737373] hover:text-[#e7000b] transition-colors" title="Baja lógica">
+                          <Trash2 size={15} strokeWidth={1.75} />
                         </button>
                       </div>
                     </td>
@@ -109,20 +109,20 @@ export const Productos = () => {
         </div>
 
         {/* Paginación */}
-        <div className="p-4 border-t border-slate-200 flex items-center justify-between text-sm text-slate-600">
+        <div className="p-4 border-t border-[#e5e5e5] flex items-center justify-between text-[13px] text-[#737373]">
           <span>Página {page + 1} de {totalPages}</span>
           <div className="flex gap-2">
             <button
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(p - 1, 0))}
-              className="px-3 py-1 border border-slate-300 rounded-md disabled:opacity-50 hover:bg-slate-50"
+              className="px-3 py-1 bg-transparent hover:bg-[#f5f5f5] text-[#0a0a0a] border border-[#e5e5e5] rounded-[18px] disabled:opacity-40 transition-colors"
             >
               Anterior
             </button>
             <button
               disabled={page + 1 >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1 border border-slate-300 rounded-md disabled:opacity-50 hover:bg-slate-50"
+              className="px-3 py-1 bg-transparent hover:bg-[#f5f5f5] text-[#0a0a0a] border border-[#e5e5e5] rounded-[18px] disabled:opacity-40 transition-colors"
             >
               Siguiente
             </button>

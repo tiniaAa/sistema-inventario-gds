@@ -16,16 +16,16 @@ export const Sidebar = () => {
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 min-h-screen">
-      <div className="h-16 flex items-center gap-3 px-6 bg-slate-950 border-b border-slate-800">
-        <Boxes size={28} className="text-blue-500" />
+    <aside className="w-64 bg-[#fafafa] border-r border-[#e5e5e5] flex flex-col shrink-0 min-h-screen">
+      <div className="h-16 flex items-center gap-3 px-6 border-b border-[#e5e5e5]">
+        <Boxes size={24} strokeWidth={1.75} className="text-[#0a0a0a]" />
         <div>
-          <h1 className="text-base font-bold text-white tracking-wide">StockMaster</h1>
-          <p className="text-xs text-slate-400">GDS Inventario</p>
+          <h1 className="text-[15px] font-semibold text-[#0a0a0a] tracking-tight">StockMaster</h1>
+          <p className="text-[12px] text-[#737373]">GDS Inventario</p>
         </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1.5">
+      <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -33,21 +33,21 @@ export const Sidebar = () => {
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                `flex items-center gap-3 px-3.5 py-2 rounded-[18px] text-[14px] font-medium transition-colors ${
                   isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
+                    ? 'bg-[#0a0a0a] text-[#fafafa]'
+                    : 'text-[#737373] hover:text-[#0a0a0a] hover:bg-[#f5f5f5]'
                 }`
               }
             >
-              <Icon size={18} />
+              <Icon size={17} strokeWidth={1.75} />
               <span>{item.name}</span>
             </NavLink>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+      <div className="p-4 border-t border-[#e5e5e5] text-[12px] text-[#737373] text-center">
         v1.0.0 &bull; Trabajo Final GDS
       </div>
     </aside>

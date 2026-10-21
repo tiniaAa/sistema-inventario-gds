@@ -12,7 +12,7 @@ import { Categorias } from './pages/Categorias';
 import { Reportes } from './pages/Reportes';
 
 const Layout = ({ children }) => (
-  <div className="flex min-h-screen bg-slate-50">
+  <div className="flex min-h-screen bg-[#f5f5f5]">
     <Sidebar />
     <div className="flex-1 flex flex-col min-w-0">
       <Navbar />
