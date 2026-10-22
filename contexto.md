@@ -1,4 +1,3 @@
-
 # ESTADO ACTUAL DEL PROYECTO
 
 ## Datos del Repositorio y Equipo
@@ -33,7 +32,7 @@
 | ID | Funcionalidad (Historia de Usuario) | Prioridad | Asignado | Estado actual |
 |:---|:---|:---|:---|:---|
 | 1 | **Autenticación:** Como usuario, quiero iniciar sesión con credenciales seguras para acceder a las funciones según mi rol asignado. | Alta | @tiniaAa | Pendiente |
-| 2 | **Alta de producto:** Como operador, quiero registrar un nuevo producto con nombre, SKU, categoría, precio y stock inicial para incorporarlo al catálogo. | Alta | @mateomujica | Pendiente |
+| 2 | **Alta de producto:** Como operador, quiero registrar un nuevo producto con nombre, SKU, categoría, precio y stock inicial para incorporarlo al catálogo. | Alta | @mateomujica | Terminada |
 | 3 | **Modificación de producto:** Como operador, quiero editar los datos comerciales y descripción de un producto para mantener la información actualizada. | Media | @mateomujica | Pendiente |
 | 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | Pendiente |
 | 5 | **Listado y búsqueda:** Como usuario, quiero buscar productos por nombre, SKU o categoría con paginación para encontrar ítems rápidamente. | Alta | @iFaustoo | Pendiente |
@@ -46,14 +45,14 @@
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 0/12 funcionalidades terminadas (0% de progreso del backlog).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 0 SP. Desvío actual: 0%.
+*   **Indicador 1 (Avance general):** 1/12 funcionalidades terminadas (8.33% de progreso del backlog).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 8 SP (HU-02 completada en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
 *   **Propósito:** Establecer la arquitectura base, modelo de datos relacional, control de acceso y el CRUD completo de catálogo de productos.
 *   **Tareas seleccionadas:** IDs 1, 2, 3, 4, 5, 6 (Total: 38 Story Points).
-*   **Estado:** En proceso
+*   **Estado:** En proceso (HU-02 Terminada; HU-01, 03, 04, 05, 06 Pendientes).
 
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
@@ -65,6 +64,8 @@
 *   **Riesgo 2 (Descoordinación en ramas de Git):** Múltiples desarrolladores trabajando en la entidad Producto en paralelo → **Consecuencia:** Conflictos graves de merge, sobrescritura de código y retrasos en la integración hacia la rama principal → **Estrategia de mitigación:** Adopción estricta de GitHub Flow, ramas cortas por funcionalidad (`feature/HU-xx`), pull requests obligatorios con revisión de al menos un par y bloqueos de merge si no pasan las validaciones locales.
 *   **Riesgo 3 (Pérdida de integridad referencial al eliminar productos):** Intentar borrar productos que ya poseen historial de ingresos o egresos → **Consecuencia:** Fallas de clave foránea en base de datos o pérdida de datos históricos de auditoría contable → **Estrategia de mitigación:** Aplicar patrón de baja lógica (*soft delete*) mediante un campo booleano `activo = false` o `deleted_at`, impidiendo la eliminación física (`DELETE`) en cascada.
 *   **Riesgo 4 (Desborde de alcance por funcionalidades secundarias):** Dedicar tiempo excesivo al diseño visual o pretender integrar facturación/impresión fiscal → **Consecuencia:** Incumplimiento del plazo de entrega de la Etapa 2 y falta de tiempo para testing funcional → **Estrategia de mitigación:** Priorización MoSCoW estricta en el backlog; rechazar toda funcionalidad fuera del alcance hasta tener las 12 historias básicas totalmente probadas y desplegadas.
+*   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
+*   **Riesgo 6 (Discrepancias entre mocks unitarios y base de datos real):** Las pruebas unitarias actuales validan controladores con MockMvc y repositorios simulados, sin testear constraints DDL directos en el motor PostgreSQL real → **Consecuencia:** Falsos positivos en pruebas ante violaciones de restricciones físicas (`CHECK (stock_actual >= 0)`) o bloqueos de transacciones concurrentes → **Estrategia de mitigación:** Incorporar pruebas de integración con Testcontainers ejecutando una instancia real de PostgreSQL en el flujo de CI.
 
 ## 10 y 13. Secuencias de Decisión y Cambios (Requisito: Mínimo 4)
 1.  **Decisión:** Migrar del almacenamiento directo de contraseñas a autenticación robusta mediante JWT con hash bcrypt y expiración de tokens.
@@ -86,6 +87,21 @@
     *   **Evidencia:** La integración de librerías de renderizado de PDF en el servidor presentó dependencias complejas y consumió el doble de tiempo estimado en la Etapa 2.
     *   **Resultado:** Se redefinió la HU 12 para generar CSV mediante streaming simple, cumpliendo el requerimiento de análisis de datos para el usuario sin comprometer la fecha de entrega.
     *   **Aprendizaje:** Ante desvíos de tiempo, es preferible simplificar la complejidad técnica de una tarea secundaria antes que retrasar la entrega de funcionalidades centrales.
+
+5.  **Decisión:** Carga estática obligatoria del agente ByteBuddy en Maven Surefire bajo Java 21 en Windows.
+    *   **Evidencia:** Durante la ejecución de `ProductoControllerTest`, la suite se bloqueó indefinidamente (>20 minutos) con error `Win32 Error 5: ERROR_ACCESS_DENIED` al intentar adjuntar dinámicamente el agente Mockito/ByteBuddy a través de Named Pipes del sistema operativo.
+    *   **Resultado:** Se configuró el plugin `maven-surefire-plugin` con el parámetro `-javaagent` apuntando al jar de ByteBuddy en el repositorio local `.m2`, reduciendo el tiempo de ejecución a 2.1 segundos.
+    *   **Aprendizaje:** En plataformas Windows y versiones recientes de Java, la Attach API en tiempo de ejecución puede ser bloqueada por permisos del sistema; las herramientas de instrumentación deben precargarse en el arranque de la JVM.
+
+6.  **Decisión:** Validación preventiva de unicidad de SKU en capa de servicio y captura semántica de colisiones.
+    *   **Evidencia:** Al intentar registrar productos con códigos SKU existentes, la base de datos lanzaba una violación de constraint relacional no controlada, retornando `500 Internal Server Error` sin mensaje descriptivo hacia el frontend.
+    *   **Resultado:** Se introdujo la verificación `productoRepository.existsBySku()` previa a la persistencia y se configuró en `GlobalExceptionHandler` la captura de `IllegalArgumentException` (400) y `DataIntegrityViolationException` (409).
+    *   **Aprendizaje:** La capa de aplicación debe validar las invariantes de negocio antes de golpear la base de datos para brindar retroalimentación clara y evitar transacciones fallidas en el motor.
+
+7.  **Decisión:** Inyección transaccional de movimiento de INGRESO al crear productos con stock inicial positivo.
+    *   **Evidencia:** Al dar de alta un producto con `stockInicial > 0`, las existencias se reflejaban en la tabla `productos` pero quedaban ausentes en `movimientos_stock`, violando la regla de trazabilidad inmutable del sistema contable.
+    *   **Resultado:** Se incorporó dentro del método `@Transactional` de alta la persistencia automática de un registro en `movimientos_stock` con `TipoMovimiento.INGRESO` asociado al usuario en sesión.
+    *   **Aprendizaje:** En arquitecturas de inventario balanceadas, ningún saldo puede materializarse sin un movimiento contable que lo justifique.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -237,7 +253,7 @@ erDiagram
 
 ### 21.2 Backend (Java + Spring Boot)
 *   **Arquitectura en Capas:**
-    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`), recibe DTOs validados con `@Valid` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 400, 401, 403, 404).
+    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`), recibe DTOs validados con `@Valid` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 400, 401, 403, 404, 409).
     *   `Service`: Contiene la lógica de negocio. Para movimientos de stock utiliza métodos anotados con `@Transactional`. En la consulta del producto aplica bloqueo pesimista (`@Lock(LockModeType.PESSIMISTIC_WRITE)`) para evitar condiciones de carrera si dos operadores registran egresos concurrentes.
     *   `Repository`: Interfaces que extienden de `JpaRepository<T, ID>` para operaciones CRUD y consultas derivadas con `Pageable` para la paginación del lado del servidor.
     *   `Security`: Configuración de `SecurityFilterChain` con política `SessionCreationPolicy.STATELESS` y filtro JWT personalizado (`JwtAuthenticationFilter`) que extrae el token del header `Authorization: Bearer <token>`, autenticando el contexto de seguridad.
@@ -250,9 +266,9 @@ erDiagram
 *   **Capa de Servicios HTTP:**
     *   Instancia centralizada de Axios con interceptor de petición (inyecta automáticamente `headers.Authorization = Bearer ${token}`) e interceptor de respuesta (captura errores 401/403 para redireccionar al login si el token expiró).
 *   **Módulos de Vista:**
-    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas.
+    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas y modal de alta de productos con validación de SKU y categorías activas.
     *   *Operaciones de Depósito:* Formularios modales para registrar ingresos y egresos rápidos validando cantidades antes de enviar.
-    *   *Dashboard / Alertas:* Indicadores visuales en rojo cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
+    *   *Dashboard / Alertas:* Indicadores visuales y tablas cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
 
 ---
 
@@ -300,13 +316,14 @@ front/
     │   ├── common/
     │   │   ├── Badge.jsx            # Badges visuales de estado y StockBadge semántico
     │   │   └── ProtectedRoute.jsx   # Guardián de rutas autenticadas y filtradas por rol
-    │   └── layout/
-    │       ├── Navbar.jsx           # Barra superior con datos del usuario conectado, rol y logout
-    │       └── Sidebar.jsx          # Menú lateral de navegación con links según rol
+    │   ├── layout/
+    │   │   └── Navbar.jsx           # Barra superior con navegación segmentada, perfil y logout
+    │   └── productos/
+    │       └── ProductoModal.jsx    # Modal de alta de producto con validaciones y estilos DESIGN.md
     └── pages/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
-        ├── Dashboard.jsx            # Métricas en KPI cards y tabla de alertas de stock mínimo (HU-10)
-        ├── Productos.jsx            # Catálogo con búsqueda reactiva, paginación y soft-delete (HU-02, HU-05)
+        ├── Dashboard.jsx            # Hub operativo con recuadros interactivos y alertas de stock (HU-10)
+        ├── Productos.jsx            # Catálogo con búsqueda reactiva, modal de alta y paginación (HU-02, HU-05)
         ├── Movimientos.jsx          # Historial y registro de ingresos, egresos y mermas (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
         └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
@@ -317,63 +334,69 @@ front/
 ### 22.2 Módulo Backend (`back/`)
 
 #### Tecnologías y Librerías:
-*   **Lenguaje y Runtime:** Java 17 LTS.
+*   **Lenguaje y Runtime:** Java 17 / 21 LTS.
 *   **Framework:** Spring Boot 3.2.4 (`spring-boot-starter-web`, `spring-boot-starter-data-jpa`, `spring-boot-starter-security`, `spring-boot-starter-validation`).
 *   **Seguridad:** Spring Security 6 + `jjwt` (Java JWT v0.11.5) para autenticación sin estado (*Stateless*).
 *   **Base de Datos:** PostgreSQL 15+ (`org.postgresql:postgresql`).
+*   **Testing:** Spring Boot Starter Test (JUnit 5, Mockito 5 con agente ByteBuddy estático).
 *   **Productividad:** `lombok` (Reducción de boilerplate para getters, setters y builders).
 
 #### Árbol de Archivos y Responsabilidades:
 ```text
 back/
-├── pom.xml                          # Descriptor Maven con todas las dependencias
+├── pom.xml                          # Descriptor Maven con dependencias y argLine de Surefire
 ├── README.md                        # Guía de configuración y arranque del backend
 └── src/
-    └── main/
-        ├── resources/
-        │   ├── application.properties # Parámetros de PostgreSQL, Hibernate y clave secreta JWT
-        │   └── schema.sql            # Script DDL de referencia con constraints y relaciones
-        └── java/com/inventario/gds/
-            ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
-            ├── config/
-            │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
-            │   ├── SecurityConfig.java   # Configuración de endpoints públicos/protegidos y BCrypt
-            │   └── DataInitializer.java  # Carga automática de usuarios y categorías de prueba al arrancar
-            ├── security/
-            │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
-            │   ├── JwtAuthenticationFilter.java # Filtro que extrae el token en cada petición HTTP
-            │   └── CustomUserDetailsService.java# Carga de credenciales y roles desde la BD
-            ├── entity/
-            │   ├── Rol.java              # Enum de roles: ADMIN, OPERADOR
-            │   ├── TipoMovimiento.java   # Enum: INGRESO, EGRESO, AJUSTE_MERMA, AJUSTE_SOBRANTE
-            │   ├── Usuario.java          # Entidad de usuarios con contraseñas hasheadas
-            │   ├── Categoria.java        # Entidad de categorías de productos
-            │   ├── Producto.java         # Entidad con stockActual, stockMinimo y soft-delete
-            │   └── MovimientoStock.java  # Entidad inmutable de auditoría de entradas y salidas
-            ├── repository/
-            │   ├── UsuarioRepository.java       # Consultas por username/email
-            │   ├── CategoriaRepository.java     # Consultas de categorías activas
-            │   ├── ProductoRepository.java      # Bloqueo pesimista (findByIdForUpdate), paginación y alertas
-            │   └── MovimientoStockRepository.java # Historial cronológico de movimientos
-            ├── dto/
-            │   ├── request/
-            │   │   ├── LoginRequest.java         # DTO con username y password validados
-            │   │   ├── ProductoRequestDTO.java   # DTO para alta/edición de producto con validaciones
-            │   │   └── MovimientoRequestDTO.java # DTO para registrar ingresos o egresos
-            │   └── response/
-            │       ├── AuthResponse.java         # Retorna token JWT y datos resumidos del usuario
-            │       └── ProductoResponseDTO.java  # Retorna datos del producto sin exponer la entidad
-            ├── exception/
-            │   ├── ResourceNotFoundException.java   # Excepción HTTP 404 personalizada
-            │   ├── StockInsuficienteException.java  # Excepción HTTP 400 por egreso superior al stock
-            │   └── GlobalExceptionHandler.java      # Controlador centralizado de errores y validaciones
-            ├── service/
-            │   └── MovimientoStockService.java      # Lógica transaccional atómica (@Transactional)
-            └── controller/
-                ├── AuthController.java            # Endpoints /api/auth/login
-                ├── ProductoController.java        # Endpoints /api/productos (CRUD, paginación, alertas)
-                ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
-                └── CategoriaController.java       # Endpoints /api/categorias
+    ├── main/
+    │   ├── resources/
+    │   │   ├── application.properties # Parámetros de PostgreSQL, Hibernate y clave secreta JWT
+    │   │   └── schema.sql            # Script DDL de referencia con constraints y relaciones
+    │   └── java/com/inventario/gds/
+    │       ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
+    │       ├── config/
+    │       │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
+    │       │   ├── SecurityConfig.java   # Configuración de endpoints públicos/protegidos y BCrypt
+    │       │   └── DataInitializer.java  # Carga automática de usuarios y categorías de prueba al arrancar
+    │       ├── security/
+    │       │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
+    │       │   ├── JwtAuthenticationFilter.java # Filtro que extrae el token en cada petición HTTP
+    │       │   └── CustomUserDetailsService.java# Carga de credenciales y roles desde la BD
+    │       ├── entity/
+    │       │   ├── Rol.java              # Enum de roles: ADMIN, OPERADOR
+    │       │   ├── TipoMovimiento.java   # Enum: INGRESO, EGRESO, AJUSTE_MERMA, AJUSTE_SOBRANTE
+    │       │   ├── Usuario.java          # Entidad de usuarios con contraseñas hasheadas
+    │       │   ├── Categoria.java        # Entidad de categorías de productos
+    │       │   ├── Producto.java         # Entidad con stockActual, stockMinimo y soft-delete
+    │       │   └── MovimientoStock.java  # Entidad inmutable de auditoría de entradas y salidas
+    │       ├── repository/
+    │       │   ├── UsuarioRepository.java       # Consultas por username/email
+    │       │   ├── CategoriaRepository.java     # Consultas de categorías activas
+    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, paginación y alertas
+    │       │   └── MovimientoStockRepository.java # Historial cronológico de movimientos
+    │       ├── dto/
+    │       │   ├── request/
+    │       │   │   ├── LoginRequest.java         # DTO con username y password validados
+    │       │   │   ├── ProductoRequestDTO.java   # DTO para alta/edición de producto con validaciones
+    │       │   │   └── MovimientoRequestDTO.java # DTO para registrar ingresos o egresos
+    │       │   └── response/
+    │       │       ├── AuthResponse.java         # Retorna token JWT y datos resumidos del usuario
+    │       │       └── ProductoResponseDTO.java  # Retorna datos del producto sin exponer la entidad
+    │       ├── exception/
+    │       │   ├── ResourceNotFoundException.java   # Excepción HTTP 404 personalizada
+    │       │   ├── StockInsuficienteException.java  # Excepción HTTP 400 por egreso superior al stock
+    │       │   └── GlobalExceptionHandler.java      # Manejador global (400, 404, 409, 500)
+    │       ├── service/
+    │       │   └── MovimientoStockService.java      # Lógica transaccional atómica (@Transactional)
+    │       └── controller/
+    │           ├── AuthController.java            # Endpoints /api/auth/login
+    │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta auditada, alertas)
+    │           ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
+    │           └── CategoriaController.java       # Endpoints /api/categorias
+    └── test/
+        ├── java/com/inventario/gds/controller/
+        │   └── ProductoControllerTest.java        # Pruebas MockMvc para alta, validaciones y auditoría
+        └── resources/mockito-extensions/
+            └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
 
 ### 22.3 Credenciales Iniciales de Prueba (Data Seeder)
@@ -391,7 +414,3 @@ Para que la aplicación funcione correctamente en desarrollo:
 1. **Base de Datos PostgreSQL:** El motor de base de datos debe estar activo en el puerto `5432` con una base creada con el nombre `inventario_db` (usuario `postgres`, contraseña `postgres` por defecto en `application.properties`).
 2. **Arranque del Backend (Primer paso obligatorio):** Debe ejecutarse primero el backend en Java/Spring Boot (`http://localhost:8080`). Al iniciar, Hibernate creará las tablas automáticamente y `DataInitializer` insertará los usuarios de prueba.
 3. **Arranque del Frontend:** Una vez levantado el backend, se ejecuta el cliente React con `npm run dev` (`http://localhost:5173`). Si el backend está apagado, el frontend no podrá comunicarse con la API y mostrará error de conexión de red.
-
-
-
-
