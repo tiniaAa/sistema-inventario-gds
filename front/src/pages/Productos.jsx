@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Plus, Search, Filter, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 import { StockBadge } from '../components/common/Badge';
+import { ProductoModal } from '../components/productos/ProductoModal';
 
 export const Productos = () => {
   const [productos, setProductos] = useState([]);
@@ -9,6 +10,8 @@ export const Productos = () => {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
 
   useEffect(() => {
     fetchProductos();
@@ -29,14 +32,33 @@ export const Productos = () => {
     }
   };
 
+  const handleProductCreated = (nuevoProducto) => {
+    setFeedbackMessage(`Producto "${nuevoProducto.nombre}" (SKU: ${nuevoProducto.sku}) registrado con éxito.`);
+    fetchProductos();
+    setTimeout(() => {
+      setFeedbackMessage('');
+    }, 4000);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Banner de Feedback Exitoso */}
+      {feedbackMessage && (
+        <div className="p-4 bg-[#ffffff] border border-[#e5e5e5] rounded-[24px] shadow-[0_0_0_1px_rgba(23,23,23,0.05),0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] flex items-center gap-3 animate-fadeIn">
+          <CheckCircle2 size={18} strokeWidth={2} className="text-[#0a0a0a]" />
+          <span className="text-[14px] text-[#0a0a0a] font-medium">{feedbackMessage}</span>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-[30px] font-semibold text-[#0a0a0a] tracking-tight">Catálogo de Productos</h1>
           <p className="text-[14px] text-[#737373]">Gestión de artículos, precios y niveles de stock.</p>
         </div>
-        <button className="bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors">
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+        >
           <Plus size={16} strokeWidth={1.75} />
           Nuevo Producto
         </button>
@@ -129,6 +151,13 @@ export const Productos = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de Alta de Producto (HU-02) */}
+      <ProductoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleProductCreated}
+      />
     </div>
   );
 };
