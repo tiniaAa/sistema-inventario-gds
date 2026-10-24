@@ -33,8 +33,8 @@
 |:---|:---|:---|:---|:---|
 | 1 | **Autenticación:** Como usuario, quiero iniciar sesión con credenciales seguras para acceder a las funciones según mi rol asignado. | Alta | @tiniaAa | Pendiente |
 | 2 | **Alta de producto:** Como operador, quiero registrar un nuevo producto con nombre, SKU, categoría, precio y stock inicial para incorporarlo al catálogo. | Alta | @mateomujica | Terminada |
-| 3 | **Modificación de producto:** Como operador, quiero editar los datos comerciales y descripción de un producto para mantener la información actualizada. | Media | @mateomujica | Pendiente |
-| 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | Pendiente |
+| 3 | **Modificación de producto:** Como operador, quiero editar los datos comerciales y descripción de un producto para mantener la información actualizada. | Media | @mateomujica | Terminada |
+| 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | En proceso |
 | 5 | **Listado y búsqueda:** Como usuario, quiero buscar productos por nombre, SKU o categoría con paginación para encontrar ítems rápidamente. | Alta | @iFaustoo | Pendiente |
 | 6 | **Gestión de categorías:** Como administrador, quiero crear, editar y listar categorías para organizar y segmentar los productos en depósito. | Baja | @mateomujica | Pendiente |
 | 7 | **Ingreso de stock:** Como operador, quiero registrar la entrada de unidades asociada a un remito o proveedor para sumar existencia física al sistema. | Alta | @tiniaAa | Pendiente |
@@ -45,14 +45,14 @@
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 1/12 funcionalidades terminadas (8.33% de progreso del backlog).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 8 SP (HU-02 completada en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 2/12 funcionalidades terminadas (16.67% de progreso del backlog; 1 funcionalidad en proceso: HU-04; 9 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 13 SP (HU-02 con 8 SP y HU-03 con 5 SP completadas en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
 *   **Propósito:** Establecer la arquitectura base, modelo de datos relacional, control de acceso y el CRUD completo de catálogo de productos.
 *   **Tareas seleccionadas:** IDs 1, 2, 3, 4, 5, 6 (Total: 38 Story Points).
-*   **Estado:** En proceso (HU-02 Terminada; HU-01, 03, 04, 05, 06 Pendientes).
+*   **Estado:** En proceso (HU-02 y HU-03 Terminadas; HU-04 En proceso; HU-01, 05, 06 Pendientes).
 
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
@@ -66,6 +66,7 @@
 *   **Riesgo 4 (Desborde de alcance por funcionalidades secundarias):** Dedicar tiempo excesivo al diseño visual o pretender integrar facturación/impresión fiscal → **Consecuencia:** Incumplimiento del plazo de entrega de la Etapa 2 y falta de tiempo para testing funcional → **Estrategia de mitigación:** Priorización MoSCoW estricta en el backlog; rechazar toda funcionalidad fuera del alcance hasta tener las 12 historias básicas totalmente probadas y desplegadas.
 *   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
 *   **Riesgo 6 (Discrepancias entre mocks unitarios y base de datos real):** Las pruebas unitarias actuales validan controladores con MockMvc y repositorios simulados, sin testear constraints DDL directos en el motor PostgreSQL real → **Consecuencia:** Falsos positivos en pruebas ante violaciones de restricciones físicas (`CHECK (stock_actual >= 0)`) o bloqueos de transacciones concurrentes → **Estrategia de mitigación:** Incorporar pruebas de integración con Testcontainers ejecutando una instancia real de PostgreSQL en el flujo de CI.
+*   **Riesgo 7 (Desincronización de categorías activas en modales abiertos de edición):** Si una categoría es dada de baja por un administrador mientras un operador edita un producto con el modal abierto → **Consecuencia:** La interfaz permite seleccionar una categoría inactiva y la operación falla recién en el backend con HTTP 400 sin advertencia reactiva previa → **Estrategia de mitigación:** Capturar el error 400 con mensaje semántico en el cliente ofreciendo recargar las categorías activas, o integrar sondeo/WebSockets para invalidación en caliente del selector.
 
 ## 10 y 13. Secuencias de Decisión y Cambios (Requisito: Mínimo 4)
 1.  **Decisión:** Migrar del almacenamiento directo de contraseñas a autenticación robusta mediante JWT con hash bcrypt y expiración de tokens.
@@ -102,6 +103,21 @@
     *   **Evidencia:** Al dar de alta un producto con `stockInicial > 0`, las existencias se reflejaban en la tabla `productos` pero quedaban ausentes en `movimientos_stock`, violando la regla de trazabilidad inmutable del sistema contable.
     *   **Resultado:** Se incorporó dentro del método `@Transactional` de alta la persistencia automática de un registro en `movimientos_stock` con `TipoMovimiento.INGRESO` asociado al usuario en sesión.
     *   **Aprendizaje:** En arquitecturas de inventario balanceadas, ningún saldo puede materializarse sin un movimiento contable que lo justifique.
+
+8.  **Decisión:** Ejecución directa del binario local de Apache Maven ante fallas de resolución DNS en scripts de bootstrap del wrapper.
+    *   **Evidencia:** El ejecutable `mvnw.cmd` carecía localmente de `maven-wrapper.jar` e intentó descargarlo vía PowerShell contra `repo.maven.apache.org`, fallando por `WebException: No se puede resolver el nombre remoto` debido a restricciones de red en el entorno de ejecución.
+    *   **Resultado:** Se utilizó de forma directa el binario `mvn.cmd` de una distribución local preinstalada de Maven 3.9 sobre Java 21 LTS, ejecutando el ciclo de build y tests sin bloqueos de red.
+    *   **Aprendizaje:** En entornos de desarrollo con políticas estrictas de red o sin salida a internet abierta, los scripts de wrapper dinámico fallan; es indispensable disponer de un runtime de compilación local desacoplado de dependencias web inmediatas.
+
+9.  **Decisión:** Consulta de unicidad de SKU con exclusión de identidad propia (`existsBySkuAndIdNot`) en operaciones de actualización.
+    *   **Evidencia:** Al actualizar datos comerciales (precio, descripción) de un producto manteniendo el mismo SKU, la consulta `existsBySku(sku)` detectaba la propia fila en base de datos arrojando un falso positivo y bloqueando la solicitud con HTTP 400.
+    *   **Resultado:** Se implementó `Boolean existsBySkuAndIdNot(String sku, Long id)` en `ProductoRepository`, generando la condición SQL `WHERE sku = ? AND id <> ?` y permitiendo la actualización idempotente del SKU original.
+    *   **Aprendizaje:** La validación de unicidad en modificaciones (*UPDATE*) debe formularse siempre como no-colisión contra terceros, excluyendo explícitamente el identificador de la entidad bajo mutación.
+
+10. **Decisión:** Blindaje e inmutabilidad de saldos de stock durante la modificación comercial de productos.
+    *   **Evidencia:** El DTO de solicitud exponía campos de stock; si se mapeaban indiscriminadamente en el método `PUT /api/productos/{id}`, se permitía alterar existencias arbitrariamente omitiendo la auditoría inmutable de `movimientos_stock`.
+    *   **Resultado:** Se desacopló la lógica de asignación en `ProductoController` para modificar únicamente atributos comerciales (`nombre`, `descripcion`, `categoria`, `precioUnitario`, `stockMinimo`, `sku`), ignorando cualquier valor de existencias y requiriendo que los cambios de stock se efectúen exclusivamente vía movimientos.
+    *   **Aprendizaje:** Los atributos contables sujetos a auditoría estricta no deben compartir ciclo de vida ni endpoints de edición con los datos descriptivos de un producto.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -266,7 +282,7 @@ erDiagram
 *   **Capa de Servicios HTTP:**
     *   Instancia centralizada de Axios con interceptor de petición (inyecta automáticamente `headers.Authorization = Bearer ${token}`) e interceptor de respuesta (captura errores 401/403 para redireccionar al login si el token expiró).
 *   **Módulos de Vista:**
-    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas y modal de alta de productos con validación de SKU y categorías activas.
+    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas y modal dual para alta y modificación comercial de productos validando SKU y categorías activas.
     *   *Operaciones de Depósito:* Formularios modales para registrar ingresos y egresos rápidos validando cantidades antes de enviar.
     *   *Dashboard / Alertas:* Indicadores visuales y tablas cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
 
@@ -282,6 +298,7 @@ sistema-inventario-gds/
 ├── contexto.md              # Documentación integral, reglas y estado del proyecto
 ├── DESIGN.md                # Sistema de diseño UI normativo (reglas de diseño para la IA)
 ├── README.md                # Guía de desarrollo y prompt estandarizado para las IAs
+├── tablero.md               # Tablero de control de KPIs y métricas de avance
 ├── front/                   # Módulo Cliente (SPA en React)
 └── back/                    # Módulo Servidor (API REST en Spring Boot)
 ```
@@ -319,11 +336,11 @@ front/
     │   ├── layout/
     │   │   └── Navbar.jsx           # Barra superior con navegación segmentada, perfil y logout
     │   └── productos/
-    │       └── ProductoModal.jsx    # Modal de alta de producto con validaciones y estilos DESIGN.md
+    │       └── ProductoModal.jsx    # Modal dual (alta y edición) de producto con validaciones y DESIGN.md
     └── pages/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
         ├── Dashboard.jsx            # Hub operativo con recuadros interactivos y alertas de stock (HU-10)
-        ├── Productos.jsx            # Catálogo con búsqueda reactiva, modal de alta y paginación (HU-02, HU-05)
+        ├── Productos.jsx            # Catálogo con búsqueda, modal dual (alta/edición) y paginación (HU-02, HU-03, HU-05)
         ├── Movimientos.jsx          # Historial y registro de ingresos, egresos y mermas (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
         └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
@@ -355,7 +372,7 @@ back/
     │       ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
     │       ├── config/
     │       │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
-    │       │   ├── SecurityConfig.java   # Configuración de endpoints públicos/protegidos y BCrypt
+    │       │   ├── SecurityConfig.java   # Configuración de endpoints (GET/POST/PUT) y BCrypt
     │       │   └── DataInitializer.java  # Carga automática de usuarios y categorías de prueba al arrancar
     │       ├── security/
     │       │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
@@ -371,7 +388,7 @@ back/
     │       ├── repository/
     │       │   ├── UsuarioRepository.java       # Consultas por username/email
     │       │   ├── CategoriaRepository.java     # Consultas de categorías activas
-    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, paginación y alertas
+    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, existsBySkuAndIdNot, paginación
     │       │   └── MovimientoStockRepository.java # Historial cronológico de movimientos
     │       ├── dto/
     │       │   ├── request/
@@ -389,12 +406,12 @@ back/
     │       │   └── MovimientoStockService.java      # Lógica transaccional atómica (@Transactional)
     │       └── controller/
     │           ├── AuthController.java            # Endpoints /api/auth/login
-    │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta auditada, alertas)
+    │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta, edición, alertas)
     │           ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
     │           └── CategoriaController.java       # Endpoints /api/categorias
     └── test/
         ├── java/com/inventario/gds/controller/
-        │   └── ProductoControllerTest.java        # Pruebas MockMvc para alta, validaciones y auditoría
+        │   └── ProductoControllerTest.java        # 15 tests MockMvc para alta (HU-02) y edición (HU-03)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
