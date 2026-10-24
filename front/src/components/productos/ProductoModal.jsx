@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, AlertCircle } from 'lucide-react';
+import { X, AlertCircle, Info } from 'lucide-react';
 import api from '../../api/axios';
 
-export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
+export const ProductoModal = ({ isOpen, onClose, onSuccess, productoAEditar = null }) => {
+  const isEdit = Boolean(productoAEditar);
   const [categorias, setCategorias] = useState([]);
   const [formData, setFormData] = useState({
     sku: '',
@@ -22,9 +23,23 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
   useEffect(() => {
     if (isOpen) {
       cargarCategorias();
-      resetForm();
+      if (productoAEditar) {
+        setFormData({
+          sku: productoAEditar.sku || '',
+          nombre: productoAEditar.nombre || '',
+          descripcion: productoAEditar.descripcion || '',
+          categoriaId: productoAEditar.categoria?.id ? String(productoAEditar.categoria.id) : '',
+          precioUnitario: productoAEditar.precioUnitario !== undefined ? String(productoAEditar.precioUnitario) : '',
+          stockInicial: productoAEditar.stockActual || 0,
+          stockMinimo: productoAEditar.stockMinimo !== undefined ? String(productoAEditar.stockMinimo) : '5',
+        });
+        setErrors({});
+        setApiError('');
+      } else {
+        resetForm();
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, productoAEditar]);
 
   const cargarCategorias = async () => {
     setLoadingCategorias(true);
@@ -61,7 +76,6 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
       ...prev,
       [name]: value,
     }));
-    // Limpia el error del campo al escribir
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -92,13 +106,15 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
       newErrors.precioUnitario = 'El precio debe ser un número mayor o igual a 0.';
     }
 
-    const stockIni = parseInt(formData.stockInicial, 10);
-    if (isNaN(stockIni) || stockIni < 0) {
-      newErrors.stockInicial = 'El stock inicial no puede ser negativo.';
+    if (!isEdit) {
+      const stockIni = parseInt(formData.stockInicial, 10);
+      if (isNaN(stockIni) || stockIni < 0) {
+        newErrors.stockInicial = 'El stock inicial no puede ser negativo.';
+      }
     }
 
     const stockMin = parseInt(formData.stockMinimo, 10);
-    if (isNaN(stockMin) || stockMin < 0) {
+    if (formData.stockMinimo === '' || isNaN(stockMin) || stockMin < 0) {
       newErrors.stockMinimo = 'El stock mínimo no puede ser negativo.';
     }
 
@@ -119,13 +135,18 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
       descripcion: formData.descripcion.trim() || null,
       categoriaId: Number(formData.categoriaId),
       precioUnitario: Number(formData.precioUnitario),
-      stockInicial: Number(formData.stockInicial) || 0,
+      stockInicial: isEdit ? (productoAEditar.stockActual || 0) : (Number(formData.stockInicial) || 0),
       stockMinimo: Number(formData.stockMinimo) || 5,
     };
 
     try {
-      const res = await api.post('/productos', payload);
-      onSuccess(res.data);
+      let res;
+      if (isEdit) {
+        res = await api.put(`/productos/${productoAEditar.id}`, payload);
+      } else {
+        res = await api.post('/productos', payload);
+      }
+      onSuccess(res.data, isEdit);
       onClose();
     } catch (err) {
       if (err.response?.data?.fieldErrors) {
@@ -133,7 +154,7 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
       } else if (err.response?.data?.message) {
         setApiError(err.response.data.message);
       } else {
-        setApiError('Ocurrió un error inesperado al registrar el producto.');
+        setApiError(isEdit ? 'Error al actualizar el producto.' : 'Ocurrió un error inesperado al registrar el producto.');
       }
     } finally {
       setSubmitting(false);
@@ -146,10 +167,17 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
         {/* Cabecera */}
         <div className="p-6 border-b border-[#e5e5e5] flex justify-between items-center sticky top-0 bg-[#ffffff] z-10">
           <div>
-            <h2 className="text-[20px] font-semibold text-[#0a0a0a] tracking-tight">Nuevo Producto</h2>
-            <p className="text-[13px] text-[#737373]">Complete la información técnica y comercial para dar de alta el artículo.</p>
+            <h2 className="text-[20px] font-semibold text-[#0a0a0a] tracking-tight">
+              {isEdit ? 'Editar Producto' : 'Nuevo Producto'}
+            </h2>
+            <p className="text-[13px] text-[#737373]">
+              {isEdit
+                ? 'Actualice la información comercial y la descripción del producto.'
+                : 'Complete la información técnica y comercial para dar de alta el artículo.'}
+            </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="text-[#737373] hover:text-[#0a0a0a] p-1.5 rounded-[18px] hover:bg-[#f5f5f5] transition-colors"
           >
@@ -163,6 +191,19 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
             <div className="p-3 bg-[#e7000b]/10 border border-[#e7000b]/20 rounded-[18px] text-[13px] text-[#e7000b] flex items-center gap-2">
               <AlertCircle size={16} strokeWidth={2} className="shrink-0" />
               <span>{apiError}</span>
+            </div>
+          )}
+
+          {isEdit && (
+            <div className="p-3 bg-[#fafafa] border border-[#e5e5e5] rounded-[18px] flex items-start gap-2.5 text-[13px]">
+              <Info size={16} strokeWidth={1.75} className="text-[#737373] shrink-0 mt-0.5" />
+              <div className="text-[#737373]">
+                <span className="font-medium text-[#0a0a0a]">Stock actual: </span>
+                <span className="font-mono text-[#0a0a0a] font-semibold">{productoAEditar.stockActual} unidades</span>.
+                <p className="text-[12px] mt-0.5">
+                  El stock físico está protegido contablemente y solo se modifica mediante movimientos de inventario (ingresos, egresos o mermas).
+                </p>
+              </div>
             </div>
           )}
 
@@ -243,7 +284,7 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 ${isEdit ? 'sm:grid-cols-2' : 'sm:grid-cols-3'} gap-4`}>
             {/* Precio Unitario */}
             <div>
               <label className="block text-[12px] font-medium uppercase tracking-wider text-[#737373] mb-1">
@@ -264,25 +305,27 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
               {errors.precioUnitario && <p className="text-[#e7000b] text-[12px] mt-1">{errors.precioUnitario}</p>}
             </div>
 
-            {/* Stock Inicial */}
-            <div>
-              <label className="block text-[12px] font-medium uppercase tracking-wider text-[#737373] mb-1">
-                Stock Inicial <span className="text-[#e7000b]">*</span>
-              </label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                name="stockInicial"
-                value={formData.stockInicial}
-                onChange={handleChange}
-                placeholder="0"
-                className={`w-full px-3.5 py-2 bg-[#f5f5f5] text-[#0a0a0a] tabular-nums rounded-[18px] text-[14px] border ${
-                  errors.stockInicial ? 'border-[#e7000b]' : 'border-transparent focus:border-[#e5e5e5]'
-                } focus:outline-none transition-colors`}
-              />
-              {errors.stockInicial && <p className="text-[#e7000b] text-[12px] mt-1">{errors.stockInicial}</p>}
-            </div>
+            {/* Stock Inicial (solo en Alta) */}
+            {!isEdit && (
+              <div>
+                <label className="block text-[12px] font-medium uppercase tracking-wider text-[#737373] mb-1">
+                  Stock Inicial <span className="text-[#e7000b]">*</span>
+                </label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  name="stockInicial"
+                  value={formData.stockInicial}
+                  onChange={handleChange}
+                  placeholder="0"
+                  className={`w-full px-3.5 py-2 bg-[#f5f5f5] text-[#0a0a0a] tabular-nums rounded-[18px] text-[14px] border ${
+                    errors.stockInicial ? 'border-[#e7000b]' : 'border-transparent focus:border-[#e5e5e5]'
+                  } focus:outline-none transition-colors`}
+                />
+                {errors.stockInicial && <p className="text-[#e7000b] text-[12px] mt-1">{errors.stockInicial}</p>}
+              </div>
+            )}
 
             {/* Stock Mínimo */}
             <div>
@@ -311,16 +354,16 @@ export const ProductoModal = ({ isOpen, onClose, onSuccess }) => {
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 bg-[#f5f5f5] hover:bg-[#e5e5e5] text-[#0a0a0a] rounded-[18px] text-[14px] font-medium transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-[#f5f5f5] hover:bg-[#e5e5e5] text-[#0a0a0a] rounded-[18px] text-[14px] font-medium transition-colors disabled:opacity-50 cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-4 py-2 bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] rounded-[18px] text-[14px] font-medium transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] rounded-[18px] text-[14px] font-medium transition-colors disabled:opacity-50 cursor-pointer"
             >
-              {submitting ? 'Guardando...' : 'Crear Producto'}
+              {submitting ? 'Guardando...' : (isEdit ? 'Guardar Cambios' : 'Crear Producto')}
             </button>
           </div>
         </form>
