@@ -23,6 +23,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     Optional<Producto> findBySku(String sku);
     Boolean existsBySku(String sku);
+    Boolean existsBySkuAndIdNot(String sku, Long id);
 
     // Listado paginado de productos activos
     Page<Producto> findByActivoTrue(Pageable pageable);

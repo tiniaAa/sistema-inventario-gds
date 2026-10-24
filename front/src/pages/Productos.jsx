@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Plus, Search, Filter, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 import { StockBadge } from '../components/common/Badge';
 import { ProductoModal } from '../components/productos/ProductoModal';
 
@@ -11,6 +11,7 @@ export const Productos = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [productoAEditar, setProductoAEditar] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState('');
 
   useEffect(() => {
@@ -32,8 +33,27 @@ export const Productos = () => {
     }
   };
 
-  const handleProductCreated = (nuevoProducto) => {
-    setFeedbackMessage(`Producto "${nuevoProducto.nombre}" (SKU: ${nuevoProducto.sku}) registrado con éxito.`);
+  const handleOpenCreate = () => {
+    setProductoAEditar(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (producto) => {
+    setProductoAEditar(producto);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setProductoAEditar(null);
+  };
+
+  const handleProductSaved = (producto, isEdit) => {
+    if (isEdit) {
+      setFeedbackMessage(`Producto "${producto.nombre}" (SKU: ${producto.sku}) actualizado con éxito.`);
+    } else {
+      setFeedbackMessage(`Producto "${producto.nombre}" (SKU: ${producto.sku}) registrado con éxito.`);
+    }
     fetchProductos();
     setTimeout(() => {
       setFeedbackMessage('');
@@ -56,7 +76,7 @@ export const Productos = () => {
           <p className="text-[14px] text-[#737373]">Gestión de artículos, precios y niveles de stock.</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreate}
           className="bg-[#0a0a0a] hover:bg-[#171717] text-[#fafafa] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors cursor-pointer"
         >
           <Plus size={16} strokeWidth={1.75} />
@@ -65,7 +85,7 @@ export const Productos = () => {
       </div>
 
       <div className="bg-[#ffffff] rounded-[24px] border border-[#e5e5e5] shadow-[0_0_0_1px_rgba(23,23,23,0.05),0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden">
-        {/* Barra de Búsqueda y Filtros */}
+        {/* Barra de Búsqueda */}
         <div className="p-4 border-b border-[#e5e5e5] flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative w-full sm:w-80">
             <Search size={16} strokeWidth={1.75} className="absolute left-3.5 top-2.5 text-[#737373]" />
@@ -115,10 +135,17 @@ export const Productos = () => {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="text-[#737373] hover:text-[#0a0a0a] transition-colors" title="Editar">
+                        <button
+                          onClick={() => handleOpenEdit(prod)}
+                          className="p-1.5 text-[#737373] hover:text-[#0a0a0a] rounded-[18px] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                          title="Editar producto"
+                        >
                           <Edit2 size={15} strokeWidth={1.75} />
                         </button>
-                        <button className="text-[#737373] hover:text-[#e7000b] transition-colors" title="Baja lógica">
+                        <button
+                          className="p-1.5 text-[#737373] hover:text-[#e7000b] rounded-[18px] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                          title="Baja lógica"
+                        >
                           <Trash2 size={15} strokeWidth={1.75} />
                         </button>
                       </div>
@@ -137,14 +164,14 @@ export const Productos = () => {
             <button
               disabled={page === 0}
               onClick={() => setPage((p) => Math.max(p - 1, 0))}
-              className="px-3 py-1 bg-transparent hover:bg-[#f5f5f5] text-[#0a0a0a] border border-[#e5e5e5] rounded-[18px] disabled:opacity-40 transition-colors"
+              className="px-3 py-1 bg-transparent hover:bg-[#f5f5f5] text-[#0a0a0a] border border-[#e5e5e5] rounded-[18px] disabled:opacity-40 transition-colors cursor-pointer"
             >
               Anterior
             </button>
             <button
               disabled={page + 1 >= totalPages}
               onClick={() => setPage((p) => p + 1)}
-              className="px-3 py-1 bg-transparent hover:bg-[#f5f5f5] text-[#0a0a0a] border border-[#e5e5e5] rounded-[18px] disabled:opacity-40 transition-colors"
+              className="px-3 py-1 bg-transparent hover:bg-[#f5f5f5] text-[#0a0a0a] border border-[#e5e5e5] rounded-[18px] disabled:opacity-40 transition-colors cursor-pointer"
             >
               Siguiente
             </button>
@@ -152,11 +179,12 @@ export const Productos = () => {
         </div>
       </div>
 
-      {/* Modal de Alta de Producto (HU-02) */}
+      {/* Modal de Alta y Edición de Producto (HU-02 y HU-03) */}
       <ProductoModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleProductCreated}
+        onClose={handleCloseModal}
+        onSuccess={handleProductSaved}
+        productoAEditar={productoAEditar}
       />
     </div>
   );

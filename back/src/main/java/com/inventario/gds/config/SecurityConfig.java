@@ -38,8 +38,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/productos/**", "/api/categorias/**").hasAnyRole("OPERADOR", "ADMIN")
                 // Registro de movimientos permitido para OPERADOR y ADMIN
                 .requestMatchers("/api/movimientos/**").hasAnyRole("OPERADOR", "ADMIN")
-                // Creación/Modificación de productos y categorías restringido a ADMIN (o según HU)
+                // Creación y Modificación de productos permitidos para OPERADOR y ADMIN (HU-02, HU-03)
                 .requestMatchers(HttpMethod.POST, "/api/productos/**").hasAnyRole("OPERADOR", "ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/productos/**").hasAnyRole("OPERADOR", "ADMIN")
+                // Baja lógica restringida a ADMIN (HU-04)
+                .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasRole("ADMIN")
                 .requestMatchers("/api/categorias/**").hasRole("ADMIN")
                 .requestMatchers("/api/reportes/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
