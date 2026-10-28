@@ -3,8 +3,13 @@ import api from '../api/axios';
 import { Plus, Search, Edit2, Trash2, CheckCircle2 } from 'lucide-react';
 import { StockBadge } from '../components/common/Badge';
 import { ProductoModal } from '../components/productos/ProductoModal';
+import { ConfirmDeleteModal } from '../components/productos/ConfirmDeleteModal';
+import { useAuth } from '../context/AuthContext';
 
 export const Productos = () => {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('ADMIN');
+
   const [productos, setProductos] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
@@ -13,6 +18,12 @@ export const Productos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [productoAEditar, setProductoAEditar] = useState(null);
   const [feedbackMessage, setFeedbackMessage] = useState('');
+
+  // Estados para baja lógica (HU-04)
+  const [productoAEliminar, setProductoAEliminar] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
     fetchProductos();
@@ -46,6 +57,41 @@ export const Productos = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setProductoAEditar(null);
+  };
+
+  const handleOpenDelete = (producto) => {
+    setProductoAEliminar(producto);
+    setDeleteError('');
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (deleteLoading) return;
+    setIsDeleteModalOpen(false);
+    setProductoAEliminar(null);
+    setDeleteError('');
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productoAEliminar) return;
+    setDeleteLoading(true);
+    setDeleteError('');
+    try {
+      await api.delete(`/productos/${productoAEliminar.id}`);
+      setFeedbackMessage(`Producto "${productoAEliminar.nombre}" (SKU: ${productoAEliminar.sku}) dado de baja con éxito.`);
+      setIsDeleteModalOpen(false);
+      setProductoAEliminar(null);
+      fetchProductos();
+      setTimeout(() => {
+        setFeedbackMessage('');
+      }, 4000);
+    } catch (err) {
+      console.error('Error al dar de baja el producto', err);
+      const msg = err.response?.data?.message || 'Error al procesar la baja lógica del producto.';
+      setDeleteError(msg);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleProductSaved = (producto, isEdit) => {
@@ -142,12 +188,23 @@ export const Productos = () => {
                         >
                           <Edit2 size={15} strokeWidth={1.75} />
                         </button>
-                        <button
-                          className="p-1.5 text-[#737373] hover:text-[#e7000b] rounded-[18px] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
-                          title="Baja lógica"
-                        >
-                          <Trash2 size={15} strokeWidth={1.75} />
-                        </button>
+                        {isAdmin ? (
+                          <button
+                            onClick={() => handleOpenDelete(prod)}
+                            className="p-1.5 text-[#737373] hover:text-[#e7000b] rounded-[18px] hover:bg-[#f5f5f5] transition-colors cursor-pointer"
+                            title="Dar de baja producto"
+                          >
+                            <Trash2 size={15} strokeWidth={1.75} />
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="p-1.5 text-[#737373] opacity-30 cursor-not-allowed rounded-[18px]"
+                            title="Solo los administradores pueden dar de baja productos"
+                          >
+                            <Trash2 size={15} strokeWidth={1.75} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -185,6 +242,16 @@ export const Productos = () => {
         onClose={handleCloseModal}
         onSuccess={handleProductSaved}
         productoAEditar={productoAEditar}
+      />
+
+      {/* Modal de Baja Lógica (HU-04) */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        producto={productoAEliminar}
+        loading={deleteLoading}
+        error={deleteError}
       />
     </div>
   );

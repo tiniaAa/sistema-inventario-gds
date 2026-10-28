@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -514,5 +515,61 @@ class ProductoControllerTest {
         mockMvc.perform(get("/api/productos/999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("Producto no encontrado con ID: 999"));
+    }
+
+    // --- Tests HU-04: Baja lógica de producto ---
+
+    @Test
+    @DisplayName("HU-04: Baja lógica exitosa de un producto activo (204 No Content)")
+    void bajaLogica_Exitoso() throws Exception {
+        Long productoId = 1L;
+        Producto producto = Producto.builder()
+                .id(productoId)
+                .sku("PROD-BAJA-01")
+                .nombre("Taladro Percutor")
+                .activo(true)
+                .build();
+
+        when(productoRepository.findById(productoId)).thenReturn(Optional.of(producto));
+        when(productoRepository.save(any(Producto.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(delete("/api/productos/{id}", productoId))
+                .andExpect(status().isNoContent());
+
+        org.junit.jupiter.api.Assertions.assertFalse(producto.getActivo());
+        verify(productoRepository, times(1)).save(producto);
+    }
+
+    @Test
+    @DisplayName("HU-04: Baja lógica falla cuando el producto no existe (404 Not Found)")
+    void bajaLogica_Error_ProductoNoEncontrado() throws Exception {
+        Long productoId = 999L;
+        when(productoRepository.findById(productoId)).thenReturn(Optional.empty());
+
+        mockMvc.perform(delete("/api/productos/{id}", productoId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("Producto no encontrado con ID: 999"));
+
+        verify(productoRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("HU-04: Baja lógica rechazada si el producto ya está inactivo (400 Bad Request)")
+    void bajaLogica_Error_ProductoYaInactivo() throws Exception {
+        Long productoId = 2L;
+        Producto productoInactivo = Producto.builder()
+                .id(productoId)
+                .sku("PROD-INACTIVO")
+                .nombre("Amoladora Angular")
+                .activo(false)
+                .build();
+
+        when(productoRepository.findById(productoId)).thenReturn(Optional.of(productoInactivo));
+
+        mockMvc.perform(delete("/api/productos/{id}", productoId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("El producto ya se encuentra dado de baja"));
+
+        verify(productoRepository, never()).save(any());
     }
 }

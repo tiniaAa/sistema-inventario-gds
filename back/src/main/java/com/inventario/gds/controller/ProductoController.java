@@ -162,9 +162,14 @@ public class ProductoController {
 
     // HU-04: Baja lógica de producto
     @DeleteMapping("/{id}")
+    @Transactional
     public ResponseEntity<Void> bajaLogica(@PathVariable Long id) {
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            throw new IllegalArgumentException("El producto ya se encuentra dado de baja");
+        }
 
         producto.setActivo(false);
         productoRepository.save(producto);
