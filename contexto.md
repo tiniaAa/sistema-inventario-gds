@@ -31,7 +31,7 @@
 
 | ID | Funcionalidad (Historia de Usuario) | Prioridad | Asignado | Estado actual |
 |:---|:---|:---|:---|:---|
-| 1 | **Autenticación:** Como usuario, quiero iniciar sesión con credenciales seguras para acceder a las funciones según mi rol asignado. | Alta | @tiniaAa | Pendiente |
+| 1 | **Autenticación:** Como usuario, quiero iniciar sesión con credenciales seguras para acceder a las funciones según mi rol asignado. | Alta | @tiniaAa | Terminada |
 | 2 | **Alta de producto:** Como operador, quiero registrar un nuevo producto con nombre, SKU, categoría, precio y stock inicial para incorporarlo al catálogo. | Alta | @mateomujica | Terminada |
 | 3 | **Modificación de producto:** Como operador, quiero editar los datos comerciales y descripción de un producto para mantener la información actualizada. | Media | @mateomujica | Terminada |
 | 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | Terminada |
@@ -45,14 +45,14 @@
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 3/12 funcionalidades terminadas (25.00% de progreso del backlog; 0 en proceso; 9 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 18 SP (HU-02 con 8 SP, HU-03 con 5 SP y HU-04 con 5 SP completadas en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 4/12 funcionalidades terminadas (33.33% de progreso del backlog; 0 en proceso; 8 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 26 SP (HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP y HU-04 con 5 SP completadas en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
 *   **Propósito:** Establecer la arquitectura base, modelo de datos relacional, control de acceso y el CRUD completo de catálogo de productos.
 *   **Tareas seleccionadas:** IDs 1, 2, 3, 4, 5, 6 (Total: 38 Story Points).
-*   **Estado:** En proceso (HU-02, HU-03 y HU-04 Terminadas; HU-01, 05, 06 Pendientes).
+*   **Estado:** En proceso (HU-01, HU-02, HU-03 y HU-04 Terminadas; HU-05 y HU-06 Pendientes).
 
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
@@ -130,6 +130,16 @@
     *   **Evidencia:** La grilla de productos mostraba el botón de baja lógica habilitado para cualquier usuario; al pulsarlo un operador, el backend rechazaba la acción con HTTP 403 Forbidden sin una comunicación preventiva clara en la interfaz.
     *   **Resultado:** Se integró el hook `useAuth()` en `Productos.jsx` para comprobar si el usuario posee rol `ADMIN`; para operadores, el disparador se inhabilita con estilo `cursor-not-allowed` y tooltip explicativo, impidiendo peticiones no autorizadas.
     *   **Aprendizaje:** El control de acceso debe diseñarse en profundidad: el backend asegura la inviolabilidad de los datos, mientras que el frontend anticipa las restricciones de rol para garantizar una experiencia operativa intuitiva y sin fricciones.
+
+13. **Decisión:** Tratamiento semántico de excepciones de autenticación y cuentas deshabilitadas en la capa de seguridad REST.
+    *   **Evidencia:** Al ingresar credenciales inválidas o intentar autenticar usuarios inactivos (`activo = false`), `AuthenticationManager` lanzaba `BadCredentialsException` y `DisabledException` que no estaban capturadas en `GlobalExceptionHandler`, cayendo en el manejador genérico de `Exception.class` y retornando HTTP 500 Internal Server Error al cliente.
+    *   **Resultado:** Se integraron manejadores explícitos `@ExceptionHandler` para `BadCredentialsException`, `DisabledException` y `AuthenticationException`, emitiendo respuestas HTTP 401 Unauthorized estructuradas en JSON con mensajes claros sobre la invalidez de las credenciales o el estado inactivo de la cuenta.
+    *   **Aprendizaje:** Los errores de autenticación esperados por reglas de negocio o credenciales incorrectas nunca deben propagarse como fallos no controlados del servidor (500), sino como respuestas semánticas cliente (401/403) bajo un esquema JSON estándar.
+
+14. **Decisión:** Desacople estricto entre vencimiento de sesión (401) y denegación de permisos de rol (403) en el cliente HTTP.
+    *   **Evidencia:** El interceptor de Axios evaluaba conjuntamente `status === 401 || status === 403`, ejecutando la destrucción inmediata del token en `localStorage` y la redirección forzada a `/login`. Cuando un usuario autenticado con rol `OPERADOR` intentaba acceder a un recurso reservado para `ADMIN` (como baja lógica), su sesión se cerraba intempestivamente perdiendo el contexto de trabajo.
+    *   **Resultado:** Se aisló la cláusula de redirección y limpieza de credenciales exclusivamente para respuestas HTTP 401 Unauthorized, permitiendo que las respuestas HTTP 403 Forbidden sean capturadas a nivel de componente para mostrar avisos de permisos insuficientes sin expulsar al usuario del sistema.
+    *   **Aprendizaje:** Un error de autorización (403 Forbidden) no invalida la identidad del usuario; forzar el re-login ante falta de privilegios degrada la experiencia de usuario y confunde los límites entre autenticación y control de acceso.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -284,7 +294,7 @@ erDiagram
     *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`), recibe DTOs validados con `@Valid` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 204, 400, 401, 403, 404, 409).
     *   `Service`: Contiene la lógica de negocio. Para movimientos de stock utiliza métodos anotados con `@Transactional`. En la consulta del producto aplica bloqueo pesimista (`@Lock(LockModeType.PESSIMISTIC_WRITE)`) para evitar condiciones de carrera si dos operadores registran egresos concurrentes.
     *   `Repository`: Interfaces que extienden de `JpaRepository<T, ID>` para operaciones CRUD y consultas derivadas con `Pageable` para la paginación del lado del servidor.
-    *   `Security`: Configuración de `SecurityFilterChain` con política `SessionCreationPolicy.STATELESS` y filtro JWT personalizado (`JwtAuthenticationFilter`) que extrae el token del header `Authorization: Bearer <token>`, autenticando el contexto de seguridad.
+    *   `Security`: Configuración de `SecurityFilterChain` con política `SessionCreationPolicy.STATELESS` y filtro JWT personalizado (`JwtAuthenticationFilter`) que extrae el token del header `Authorization: Bearer <token>`, autenticando el contexto de seguridad. EntryPoints y Handlers personalizados para respuestas JSON estructuradas en 401 y 403.
 *   **CORS:** Bean centralizado de `CorsConfigurationSource` habilitando orígenes autorizados (cliente React en desarrollo y producción).
 
 ### 21.3 Frontend (React)
@@ -292,7 +302,7 @@ erDiagram
     *   `AuthContext`: Provee el estado global del usuario logueado, sus roles (`ADMIN` u `OPERADOR`) y almacena el JWT en memoria / `localStorage`.
     *   Rutas protegidas mediante componentes envolventes (`<ProtectedRoute roles={['ADMIN']} />`).
 *   **Capa de Servicios HTTP:**
-    *   Instancia centralizada de Axios con interceptor de petición (inyecta automáticamente `headers.Authorization = Bearer ${token}`) e interceptor de respuesta (captura errores 401/403 para redireccionar al login si el token expiró).
+    *   Instancia centralizada de Axios con interceptor de petición (inyecta automáticamente `headers.Authorization = Bearer ${token}`) e interceptor de respuesta (captura error 401 para redireccionar al login por expiración y propaga 403 sin destruir sesión).
 *   **Módulos de Vista:**
     *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas, modal dual para alta y modificación comercial de productos, modal de baja lógica con acento destructivo y control de permisos por rol.
     *   *Operaciones de Depósito:* Formularios modales para registrar ingresos y egresos rápidos validando cantidades antes de enviar.
@@ -320,7 +330,7 @@ sistema-inventario-gds/
 #### Tecnologías y Librerías:
 *   **Framework base:** React 18 + Vite 5 (Bundler ultrarrápido).
 *   **Enrutamiento:** `react-router-dom` v6 (Rutas públicas y privadas protegidas por rol).
-*   **Cliente HTTP:** `axios` v1.6 (Instancia configurada con interceptores Bearer y control de errores 401/403).
+*   **Cliente HTTP:** `axios` v1.6 (Instancia configurada con interceptores Bearer y control granular de errores 401 vs 403).
 *   **Iconografía:** `lucide-react` (Iconos vectoriales minimalistas y funcionales a 1.5–2px de grosor).
 *   **Estilos:** `tailwindcss` v3 + `postcss` + `autoprefixer` (Tokens acromáticos de `DESIGN.md`: canvas, paper, ink, hairline, ember).
 
@@ -338,7 +348,7 @@ front/
     ├── App.jsx                      # Definición de rutas protegidas y Layout principal
     ├── index.css                    # Directivas Tailwind y utilidades (tabular-nums)
     ├── api/
-    │   └── axios.js                 # Cliente Axios preconfigurado con token Bearer automático
+    │   └── axios.js                 # Cliente Axios preconfigurado con token Bearer automático y control 401/403
     ├── context/
     │   └── AuthContext.jsx          # Contexto global de autenticación, token y verificación de roles
     ├── components/
@@ -385,7 +395,7 @@ back/
     │       ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
     │       ├── config/
     │       │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
-    │       │   ├── SecurityConfig.java   # Configuración de endpoints (GET/POST/PUT/DELETE) y BCrypt
+    │       │   ├── SecurityConfig.java   # Configuración de endpoints (GET/POST/PUT/DELETE), handlers JSON y BCrypt
     │       │   └── DataInitializer.java  # Carga automática de usuarios y categorías de prueba al arrancar
     │       ├── security/
     │       │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
@@ -414,7 +424,7 @@ back/
     │       ├── exception/
     │       │   ├── ResourceNotFoundException.java   # Excepción HTTP 404 personalizada
     │       │   ├── StockInsuficienteException.java  # Excepción HTTP 400 por egreso superior al stock
-    │       │   └── GlobalExceptionHandler.java      # Manejador global (400, 404, 409, 500)
+    │       │   └── GlobalExceptionHandler.java      # Manejador global (400, 401, 403, 404, 409, 500)
     │       ├── service/
     │       │   └── MovimientoStockService.java      # Lógica transaccional atómica (@Transactional)
     │       └── controller/
@@ -424,7 +434,8 @@ back/
     │           └── CategoriaController.java       # Endpoints /api/categorias
     └── test/
         ├── java/com/inventario/gds/controller/
-        │   └── ProductoControllerTest.java        # 18 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja)
+        │   ├── ProductoControllerTest.java        # 18 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja)
+        │   └── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
