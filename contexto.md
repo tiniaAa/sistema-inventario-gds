@@ -34,7 +34,7 @@
 | 1 | **Autenticación:** Como usuario, quiero iniciar sesión con credenciales seguras para acceder a las funciones según mi rol asignado. | Alta | @tiniaAa | Pendiente |
 | 2 | **Alta de producto:** Como operador, quiero registrar un nuevo producto con nombre, SKU, categoría, precio y stock inicial para incorporarlo al catálogo. | Alta | @mateomujica | Terminada |
 | 3 | **Modificación de producto:** Como operador, quiero editar los datos comerciales y descripción de un producto para mantener la información actualizada. | Media | @mateomujica | Terminada |
-| 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | En proceso |
+| 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | Terminada |
 | 5 | **Listado y búsqueda:** Como usuario, quiero buscar productos por nombre, SKU o categoría con paginación para encontrar ítems rápidamente. | Alta | @iFaustoo | Pendiente |
 | 6 | **Gestión de categorías:** Como administrador, quiero crear, editar y listar categorías para organizar y segmentar los productos en depósito. | Baja | @mateomujica | Pendiente |
 | 7 | **Ingreso de stock:** Como operador, quiero registrar la entrada de unidades asociada a un remito o proveedor para sumar existencia física al sistema. | Alta | @tiniaAa | Pendiente |
@@ -45,14 +45,14 @@
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 2/12 funcionalidades terminadas (16.67% de progreso del backlog; 1 funcionalidad en proceso: HU-04; 9 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 13 SP (HU-02 con 8 SP y HU-03 con 5 SP completadas en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 3/12 funcionalidades terminadas (25.00% de progreso del backlog; 0 en proceso; 9 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 18 SP (HU-02 con 8 SP, HU-03 con 5 SP y HU-04 con 5 SP completadas en Etapa 1). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
 *   **Propósito:** Establecer la arquitectura base, modelo de datos relacional, control de acceso y el CRUD completo de catálogo de productos.
 *   **Tareas seleccionadas:** IDs 1, 2, 3, 4, 5, 6 (Total: 38 Story Points).
-*   **Estado:** En proceso (HU-02 y HU-03 Terminadas; HU-04 En proceso; HU-01, 05, 06 Pendientes).
+*   **Estado:** En proceso (HU-02, HU-03 y HU-04 Terminadas; HU-01, 05, 06 Pendientes).
 
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
@@ -67,6 +67,8 @@
 *   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
 *   **Riesgo 6 (Discrepancias entre mocks unitarios y base de datos real):** Las pruebas unitarias actuales validan controladores con MockMvc y repositorios simulados, sin testear constraints DDL directos en el motor PostgreSQL real → **Consecuencia:** Falsos positivos en pruebas ante violaciones de restricciones físicas (`CHECK (stock_actual >= 0)`) o bloqueos de transacciones concurrentes → **Estrategia de mitigación:** Incorporar pruebas de integración con Testcontainers ejecutando una instancia real de PostgreSQL en el flujo de CI.
 *   **Riesgo 7 (Desincronización de categorías activas en modales abiertos de edición):** Si una categoría es dada de baja por un administrador mientras un operador edita un producto con el modal abierto → **Consecuencia:** La interfaz permite seleccionar una categoría inactiva y la operación falla recién en el backend con HTTP 400 sin advertencia reactiva previa → **Estrategia de mitigación:** Capturar el error 400 con mensaje semántico en el cliente ofreciendo recargar las categorías activas, o integrar sondeo/WebSockets para invalidación en caliente del selector.
+*   **Riesgo 8 (Irreversibilidad de bajas lógicas sin mecanismo de reactivación):** Ausencia de endpoints o interfaz para reactivar productos (`activo = true`) inhabilitados por equivocación → **Consecuencia:** Imposibilidad de restaurar ítems deshabilitados por error desde la aplicación web, obligando a intervenciones manuales en la base de datos SQL con riesgo de alterar auditorías → **Estrategia de mitigación:** Diseñar un endpoint `PATCH /api/productos/{id}/reactivar` restringido exclusivamente al rol `ADMIN` con diálogo de confirmación en la UI.
+*   **Riesgo 9 (Opacidad de catálogo histórico de productos deshabilitados):** Las consultas de listado en `ProductoRepository` (`findByActivoTrue` y `searchActivos`) excluyen de forma permanente los registros inactivos → **Consecuencia:** Los administradores no disponen de una vista para auditar o supervisar el catálogo de productos históricos dados de baja → **Estrategia de mitigación:** Añadir un parámetro booleano `incluirInactivos` en los endpoints de catálogo y un selector de filtrado en la cabecera de la tabla de productos para usuarios con rol `ADMIN`.
 
 ## 10 y 13. Secuencias de Decisión y Cambios (Requisito: Mínimo 4)
 1.  **Decisión:** Migrar del almacenamiento directo de contraseñas a autenticación robusta mediante JWT con hash bcrypt y expiración de tokens.
@@ -118,6 +120,16 @@
     *   **Evidencia:** El DTO de solicitud exponía campos de stock; si se mapeaban indiscriminadamente en el método `PUT /api/productos/{id}`, se permitía alterar existencias arbitrariamente omitiendo la auditoría inmutable de `movimientos_stock`.
     *   **Resultado:** Se desacopló la lógica de asignación en `ProductoController` para modificar únicamente atributos comerciales (`nombre`, `descripcion`, `categoria`, `precioUnitario`, `stockMinimo`, `sku`), ignorando cualquier valor de existencias y requiriendo que los cambios de stock se efectúen exclusivamente vía movimientos.
     *   **Aprendizaje:** Los atributos contables sujetos a auditoría estricta no deben compartir ciclo de vida ni endpoints de edición con los datos descriptivos de un producto.
+
+11. **Decisión:** Contexto transaccional explícito (@Transactional) y control de idempotencia semántica en bajas lógicas.
+    *   **Evidencia:** El método `bajaLogica` se ejecutaba sin garantía transaccional y permitía peticiones de baja sobre productos ya inactivos (`activo = false`), respondiendo erróneamente con éxito sin verificar el estado previo de la entidad.
+    *   **Resultado:** Se anotó el endpoint con `@Transactional` y se añadió la comprobación `Boolean.FALSE.equals(producto.getActivo())`, retornando error HTTP 400 Bad Request estructurado ante intentos de baja reiterada.
+    *   **Aprendizaje:** Las operaciones de mutación destructiva deben ser atómicas y validar precondiciones de idempotencia semántica para evitar operaciones redundantes o inconsistencias en la sesión del ORM.
+
+12. **Decisión:** Sincronización de autorización y restricciones de rol en la capa visual (Defense-in-Depth).
+    *   **Evidencia:** La grilla de productos mostraba el botón de baja lógica habilitado para cualquier usuario; al pulsarlo un operador, el backend rechazaba la acción con HTTP 403 Forbidden sin una comunicación preventiva clara en la interfaz.
+    *   **Resultado:** Se integró el hook `useAuth()` en `Productos.jsx` para comprobar si el usuario posee rol `ADMIN`; para operadores, el disparador se inhabilita con estilo `cursor-not-allowed` y tooltip explicativo, impidiendo peticiones no autorizadas.
+    *   **Aprendizaje:** El control de acceso debe diseñarse en profundidad: el backend asegura la inviolabilidad de los datos, mientras que el frontend anticipa las restricciones de rol para garantizar una experiencia operativa intuitiva y sin fricciones.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -269,7 +281,7 @@ erDiagram
 
 ### 21.2 Backend (Java + Spring Boot)
 *   **Arquitectura en Capas:**
-    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`), recibe DTOs validados con `@Valid` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 400, 401, 403, 404, 409).
+    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`), recibe DTOs validados con `@Valid` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 204, 400, 401, 403, 404, 409).
     *   `Service`: Contiene la lógica de negocio. Para movimientos de stock utiliza métodos anotados con `@Transactional`. En la consulta del producto aplica bloqueo pesimista (`@Lock(LockModeType.PESSIMISTIC_WRITE)`) para evitar condiciones de carrera si dos operadores registran egresos concurrentes.
     *   `Repository`: Interfaces que extienden de `JpaRepository<T, ID>` para operaciones CRUD y consultas derivadas con `Pageable` para la paginación del lado del servidor.
     *   `Security`: Configuración de `SecurityFilterChain` con política `SessionCreationPolicy.STATELESS` y filtro JWT personalizado (`JwtAuthenticationFilter`) que extrae el token del header `Authorization: Bearer <token>`, autenticando el contexto de seguridad.
@@ -282,7 +294,7 @@ erDiagram
 *   **Capa de Servicios HTTP:**
     *   Instancia centralizada de Axios con interceptor de petición (inyecta automáticamente `headers.Authorization = Bearer ${token}`) e interceptor de respuesta (captura errores 401/403 para redireccionar al login si el token expiró).
 *   **Módulos de Vista:**
-    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas y modal dual para alta y modificación comercial de productos validando SKU y categorías activas.
+    *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas, modal dual para alta y modificación comercial de productos, modal de baja lógica con acento destructivo y control de permisos por rol.
     *   *Operaciones de Depósito:* Formularios modales para registrar ingresos y egresos rápidos validando cantidades antes de enviar.
     *   *Dashboard / Alertas:* Indicadores visuales y tablas cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
 
@@ -336,11 +348,12 @@ front/
     │   ├── layout/
     │   │   └── Navbar.jsx           # Barra superior con navegación segmentada, perfil y logout
     │   └── productos/
-    │       └── ProductoModal.jsx    # Modal dual (alta y edición) de producto con validaciones y DESIGN.md
+    │       ├── ProductoModal.jsx    # Modal dual (alta y edición) de producto con validaciones y DESIGN.md
+    │       └── ConfirmDeleteModal.jsx # Modal de confirmación de baja lógica con acento destructivo Ember
     └── pages/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
         ├── Dashboard.jsx            # Hub operativo con recuadros interactivos y alertas de stock (HU-10)
-        ├── Productos.jsx            # Catálogo con búsqueda, modal dual (alta/edición) y paginación (HU-02, HU-03, HU-05)
+        ├── Productos.jsx            # Catálogo con búsqueda, modal dual, modal de baja y control de rol (HU-02..05)
         ├── Movimientos.jsx          # Historial y registro de ingresos, egresos y mermas (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
         └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
@@ -372,7 +385,7 @@ back/
     │       ├── InventarioApplication.java # Clase principal de inicialización Spring Boot
     │       ├── config/
     │       │   ├── CorsConfig.java       # Habilita peticiones cruzadas desde http://localhost:5173
-    │       │   ├── SecurityConfig.java   # Configuración de endpoints (GET/POST/PUT) y BCrypt
+    │       │   ├── SecurityConfig.java   # Configuración de endpoints (GET/POST/PUT/DELETE) y BCrypt
     │       │   └── DataInitializer.java  # Carga automática de usuarios y categorías de prueba al arrancar
     │       ├── security/
     │       │   ├── JwtTokenProvider.java        # Generación, firma y validación de tokens Bearer
@@ -406,12 +419,12 @@ back/
     │       │   └── MovimientoStockService.java      # Lógica transaccional atómica (@Transactional)
     │       └── controller/
     │           ├── AuthController.java            # Endpoints /api/auth/login
-    │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta, edición, alertas)
+    │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta, edición, baja, alertas)
     │           ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
     │           └── CategoriaController.java       # Endpoints /api/categorias
     └── test/
         ├── java/com/inventario/gds/controller/
-        │   └── ProductoControllerTest.java        # 15 tests MockMvc para alta (HU-02) y edición (HU-03)
+        │   └── ProductoControllerTest.java        # 18 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
