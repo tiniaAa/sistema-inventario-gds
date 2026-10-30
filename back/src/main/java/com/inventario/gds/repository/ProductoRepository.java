@@ -37,4 +37,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     // Alertas de stock crítico (HU-10)
     @Query("SELECT p FROM Producto p WHERE p.activo = true AND p.stockActual <= p.stockMinimo ORDER BY p.stockActual ASC")
     List<Producto> findProductosCriticos();
+
+    Long countByCategoriaId(Long categoriaId);
+    Long countByCategoriaIdAndActivoTrue(Long categoriaId);
 }
