@@ -1,6 +1,7 @@
 package com.inventario.gds.service;
 
 import com.inventario.gds.dto.request.MovimientoRequestDTO;
+import com.inventario.gds.dto.response.MovimientoResponseDTO;
 import com.inventario.gds.entity.*;
 import com.inventario.gds.exception.ResourceNotFoundException;
 import com.inventario.gds.exception.StockInsuficienteException;
@@ -22,10 +23,14 @@ public class MovimientoStockService {
     private final UsuarioRepository usuarioRepository;
 
     @Transactional
-    public MovimientoStock registrarMovimiento(MovimientoRequestDTO dto, String username) {
-        // Bloqueo pesimista para evitar colisiones en egresos concurrentes
+    public MovimientoResponseDTO registrarMovimiento(MovimientoRequestDTO dto, String username) {
+        // Bloqueo pesimista para evitar colisiones en movimientos concurrentes
         Producto producto = productoRepository.findByIdForUpdate(dto.getProductoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dto.getProductoId()));
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            throw new IllegalArgumentException("No se pueden registrar movimientos sobre un producto inactivo");
+        }
 
         Usuario usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + username));
@@ -63,14 +68,33 @@ public class MovimientoStockService {
                 .cantidad(dto.getCantidad())
                 .stockAnterior(stockAnterior)
                 .stockPosterior(stockPosterior)
-                .motivo(dto.getMotivo())
+                .motivo(dto.getMotivo().trim())
                 .build();
 
-        return movimientoRepository.save(movimiento);
+        MovimientoStock guardado = movimientoRepository.save(movimiento);
+        return mapToDTO(guardado);
     }
 
     @Transactional(readOnly = true)
-    public Page<MovimientoStock> listarMovimientos(Pageable pageable) {
-        return movimientoRepository.findAllByOrderByFechaMovimientoDesc(pageable);
+    public Page<MovimientoResponseDTO> listarMovimientos(Pageable pageable) {
+        return movimientoRepository.findAllByOrderByFechaMovimientoDesc(pageable)
+                .map(this::mapToDTO);
+    }
+
+    public MovimientoResponseDTO mapToDTO(MovimientoStock m) {
+        return MovimientoResponseDTO.builder()
+                .id(m.getId())
+                .productoId(m.getProducto() != null ? m.getProducto().getId() : null)
+                .productoNombre(m.getProducto() != null ? m.getProducto().getNombre() : null)
+                .productoSku(m.getProducto() != null ? m.getProducto().getSku() : null)
+                .usuarioId(m.getUsuario() != null ? m.getUsuario().getId() : null)
+                .usuarioUsername(m.getUsuario() != null ? m.getUsuario().getUsername() : null)
+                .tipoMovimiento(m.getTipoMovimiento())
+                .cantidad(m.getCantidad())
+                .stockAnterior(m.getStockAnterior())
+                .stockPosterior(m.getStockPosterior())
+                .motivo(m.getMotivo())
+                .fechaMovimiento(m.getFechaMovimiento())
+                .build();
     }
 }
