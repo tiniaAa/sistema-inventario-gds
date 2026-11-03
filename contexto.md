@@ -38,15 +38,15 @@
 | 5 | **Listado y búsqueda:** Como usuario, quiero buscar productos por nombre, SKU o categoría con paginación para encontrar ítems rápidamente. | Alta | @iFaustoo | Pendiente |
 | 6 | **Gestión de categorías:** Como administrador, quiero crear, editar y listar categorías para organizar y segmentar los productos en depósito. | Baja | @mateomujica | Terminada |
 | 7 | **Ingreso de stock:** Como operador, quiero registrar la entrada de unidades asociada a un remito o proveedor para sumar existencia física al sistema. | Alta | @tiniaAa | Terminada |
-| 8 | **Egreso de stock:** Como operador, quiero registrar la salida de mercadería con su motivo correspondiente (venta, traslado) para descontar existencias. | Alta | @tiniaAa | Pendiente |
+| 8 | **Egreso de stock:** Como operador, quiero registrar la salida de mercadería con su motivo correspondiente (venta, traslado) para descontar existencias. | Alta | @tiniaAa | Terminada |
 | 9 | **Ajuste por merma/pérdida:** Como administrador, quiero registrar ajustes manuales por roturas o pérdidas justificadas para corregir desvíos con el stock real. | Media | @tiniaAa | Pendiente |
 | 10 | **Alertas de stock mínimo:** Como encargado, quiero ver un indicador visual de alerta cuando un ítem caiga por debajo de su umbral mínimo para ordenar reposición. | Alta | @iFaustoo | Pendiente |
 | 11 | **Historial de movimientos:** Como administrador, quiero auditar el registro cronológico de entradas y salidas con usuario, fecha y motivo para controlar desvíos. | Media | @iFaustoo | Pendiente |
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 6/12 funcionalidades terminadas (50.00% de progreso del backlog; 0 en proceso; 6 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 37 SP (29 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP y HU-06 con 3 SP; 8 SP en Etapa 2: HU-07 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 7/12 funcionalidades terminadas (58.33% de progreso del backlog; 0 en proceso; 5 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 45 SP (29 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP y HU-06 con 3 SP; 16 SP en Etapa 2: HU-07 con 8 SP y HU-08 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
@@ -57,14 +57,14 @@
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
 *   **Tareas seleccionadas:** IDs 7, 8, 9, 10, 11, 12 (Total: 42 Story Points).
-*   **Estado:** En proceso (HU-07 Terminada; HU-08, HU-09, HU-10, HU-11 y HU-12 Pendientes).
+*   **Estado:** En proceso (HU-07 y HU-08 Terminadas; HU-09, HU-10, HU-11 y HU-12 Pendientes).
 
 ## 9. Posibles Problemas (Requisito: Mínimo 4)
 *   **Riesgo 1 (Concurrencia en actualización de stock):** Dos operadores registran egresos o ingresos simultáneos del mismo producto → **Consecuencia:** Inconsistencia de datos, saldo de stock negativo y condiciones de carrera (race conditions) en la base de datos → **Estrategia de mitigación:** Implementar transacciones de base de datos con bloqueo pesimista (`findByIdForUpdate` / `SELECT FOR UPDATE`) a nivel ORM, nivel de aislamiento serializable/read committed y restricciones relacionales de constraint (`CHECK (stock_actual >= 0)`).
 *   **Riesgo 2 (Descoordinación en ramas de Git):** Múltiples desarrolladores trabajando en la entidad Producto o Movimientos en paralelo → **Consecuencia:** Conflictos graves de merge, sobrescritura de código y retrasos en la integración hacia la rama principal → **Estrategia de mitigación:** Adopción estricta de GitHub Flow, ramas cortas por funcionalidad (`feature/HU-xx`), pull requests obligatorios con revisión de al menos un par y bloqueos de merge si no pasan las validaciones locales.
 *   **Riesgo 3 (Pérdida de integridad referencial al eliminar productos o categorías vinculadas):** Intentar borrar productos o categorías que poseen historial de movimientos o ítems asignados → **Consecuencia:** Fallas de clave foránea en base de datos o pérdida de datos históricos de auditoría contable → **Estrategia de mitigación:** Aplicar patrón de baja lógica (*soft delete*) mediante un campo booleano `activo = false` o `deleted_at`, complementado con comprobaciones previas (`countByCategoriaIdAndActivoTrue`) que impidan el borrado físico (`DELETE`) en cascada.
 *   **Riesgo 4 (Desborde de alcance por funcionalidades secundarias):** Dedicar tiempo excesivo al diseño visual o pretender integrar facturación/impresión fiscal → **Consecuencia:** Incumplimiento del plazo de entrega de la Etapa 2 y falta de tiempo para testing funcional → **Estrategia de mitigación:** Priorización MoSCoW estricta en el backlog; rechazar toda funcionalidad fuera del alcance hasta tener las 12 historias básicas totalmente probadas y desplegadas.
-*   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, `CategoriaModal.jsx` o `IngresoStockModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
+*   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, `CategoriaModal.jsx`, `IngresoStockModal.jsx` o `EgresoStockModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
 *   **Riesgo 6 (Discrepancias entre mocks unitarios y base de datos real):** Las pruebas unitarias actuales validan controladores con MockMvc y repositorios simulados, sin testear constraints DDL directos en el motor PostgreSQL real → **Consecuencia:** Falsos positivos en pruebas ante violaciones de restricciones físicas (`CHECK (stock_actual >= 0)`) o bloqueos de transacciones concurrentes → **Estrategia de mitigación:** Incorporar pruebas de integración con Testcontainers ejecutando una instancia real de PostgreSQL en el flujo de CI.
 *   **Riesgo 7 (Desincronización de categorías activas en modales abiertos de edición):** Si una categoría es dada de baja por un administrador mientras un operador edita un producto con el modal abierto → **Consecuencia:** La interfaz permite seleccionar una categoría inactiva y la operación falla recién en el backend con HTTP 400 sin advertencia reactiva previa → **Estrategia de mitigación:** Capturar el error 400 con mensaje semántico en el cliente ofreciendo recargar las categorías activas, o integrar sondeo/WebSockets para invalidación en caliente del selector.
 *   **Riesgo 8 (Irreversibilidad de bajas lógicas sin mecanismo de reactivación en productos):** Ausencia de endpoints o interfaz para reactivar productos (`activo = true`) inhabilitados por equivocación → **Consecuencia:** Imposibilidad de restaurar ítems deshabilitados por error desde la aplicación web, obligando a intervenciones manuales en la base de datos SQL con riesgo de alterar auditorías → **Estrategia de mitigación:** Diseñar un endpoint `PATCH /api/productos/{id}/reactivar` restringido exclusivamente al rol `ADMIN` con diálogo de confirmación en la UI (análogo al implementado exitosamente en categorías).
@@ -171,6 +171,11 @@
     *   **Evidencia:** `MovimientoStockService` carecía de validación del estado operativo del producto; si un ítem había sido dado de baja lógica (`activo = false`) por un administrador, el sistema continuaba permitiendo la recepción de remitos y la alteración de sus existencias contables.
     *   **Resultado:** Se incorporó en la capa de servicio la comprobación preventiva `Boolean.FALSE.equals(producto.getActivo())` bajo bloqueo pesimista (`findByIdForUpdate`), arrojando `IllegalArgumentException` (HTTP 400 Bad Request) e impidiendo cualquier ingreso de stock sobre ítems inactivos.
     *   **Aprendizaje:** Las reglas de baja lógica (*soft delete*) deben aplicarse de forma transversal a toda la lógica de negocio; congelar las existencias de entidades dadas de baja previene desvíos contables entre el inventario físico y el depósito del sistema.
+
+21. **Decisión:** Validación dual y preventiva de existencias (Defensa en Profundidad) para egresos de stock.
+    *   **Evidencia:** Peticiones concurrentes entre múltiples operadores egresando el mismo SKU o intentos de egreso con saldo insuficiente pueden producir condiciones de carrera, errores 500 no controlados o sobrecarga innecesaria de la red si se confía únicamente en la base de datos o exclusivamente en la interfaz cliente.
+    *   **Resultado:** Se implementó una estrategia en capas: en frontend (`EgresoStockModal.jsx`) se calcula en tiempo real `stockProyectado = stockActual - cantidad`, deshabilitando el botón de envío y mostrando alertas visuales destructivas (`#e7000b`) si la cantidad supera el saldo disponible; en backend (`MovimientoStockService.java`), se ejecuta bloqueo pesimista a nivel de fila (`findByIdForUpdate`) con lanzamiento de `StockInsuficienteException` (HTTP 400 Bad Request) y respaldo de constraint relacional física `CHECK (stock_actual >= 0)`.
+    *   **Aprendizaje:** El cálculo y bloqueo reactivo en el cliente mejora sustancialmente la experiencia del operador y reduce tráfico espurio, pero la transacción aislada con bloqueo pesimista en base de datos es la única garantía infranqueable de consistencia ACID en sistemas de inventario transaccionales.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -337,7 +342,7 @@ erDiagram
 *   **Módulos de Vista:**
     *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas, modal dual para alta y modificación comercial de productos, modal de baja lógica con acento destructivo y control de permisos por rol.
     *   *Categorías:* Vista administrativa con filtrado reactivo por estado (Todas, Activas, Inactivas), búsqueda en tiempo real, modal dual de creación/edición con contadores de caracteres (`CategoriaModal.jsx`), modal de confirmación de baja lógica con advertencia ante productos vinculados (`ConfirmCategoriaModal.jsx`) y endpoint de reactivación.
-    *   *Operaciones de Depósito:* Módulo de trazabilidad y movimientos (`Movimientos.jsx`) con botón de refresco manual (`RefreshCw`), tabla paginada de auditoría y modal de ingreso de mercadería (`IngresoStockModal.jsx`) con previsualización reactiva de saldos proyectados (`stockActual + cantidad`), selección de productos activos y validaciones semánticas en cliente.
+    *   *Operaciones de Depósito:* Módulo de trazabilidad y movimientos (`Movimientos.jsx`) con botón de refresco manual (`RefreshCw`), tabla paginada de auditoría, modal de ingreso (`IngresoStockModal.jsx`) y modal reactivo de egreso de mercadería (`EgresoStockModal.jsx`) con cálculo en vivo de existencias remanentes (`stockActual - cantidad`), bloqueo automático de sobregiro y validaciones defensivas.
     *   *Dashboard / Alertas:* Indicadores visuales y tablas cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
 
 ---
@@ -396,12 +401,13 @@ front/
     │   │   ├── CategoriaModal.jsx   # Modal dual (creación y edición) de categorías con contadores y validaciones
     │   │   └── ConfirmCategoriaModal.jsx # Modal de confirmación de baja lógica con alerta de productos vinculados
     │   └── movimientos/
-    │       └── IngresoStockModal.jsx # Modal de ingreso de mercadería con cálculo de stock proyectado (HU-07)
+    │       ├── IngresoStockModal.jsx # Modal de ingreso de mercadería con cálculo de stock proyectado (HU-07)
+    │       └── EgresoStockModal.jsx  # Modal de egreso con validación de stock y advertencia de sobregiro (HU-08)
     └── pages/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
         ├── Dashboard.jsx            # Hub operativo con recuadros interactivos y alertas de stock (HU-10)
         ├── Productos.jsx            # Catálogo con búsqueda, modal dual, modal de baja y control de rol (HU-02..05)
-        ├── Movimientos.jsx          # Historial, refresco manual y registro de ingresos con modal (HU-07, HU-08, HU-11)
+        ├── Movimientos.jsx          # Historial, refresco y registro de ingresos y egresos con modales (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
         └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
 ```
@@ -477,7 +483,7 @@ back/
         │   ├── ProductoControllerTest.java        # 18 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja)
         │   ├── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         │   ├── CategoriaControllerTest.java       # 17 tests MockMvc (HU-06 CRUD, reactivación, validaciones)
-        │   └── MovimientoStockControllerTest.java # 7 tests MockMvc (HU-07 ingreso, validaciones, saldos, paginación)
+        │   └── MovimientoStockControllerTest.java # 9 tests MockMvc (HU-07 ingreso, HU-08 egreso, saldos, paginación)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
