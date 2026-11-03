@@ -3,11 +3,13 @@ import api from '../api/axios';
 import { ArrowDownLeft, ArrowUpRight, AlertCircle, PlusCircle, RefreshCw } from 'lucide-react';
 import { Badge } from '../components/common/Badge';
 import { IngresoStockModal } from '../components/movimientos/IngresoStockModal';
+import { EgresoStockModal } from '../components/movimientos/EgresoStockModal';
 
 export const Movimientos = () => {
   const [movimientos, setMovimientos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
+  const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
   useEffect(() => {
@@ -30,6 +32,14 @@ export const Movimientos = () => {
     fetchMovimientos();
     setFeedbackMsg(
       `Ingreso registrado con éxito: +${nuevoMovimiento.cantidad} u. para "${nuevoMovimiento.productoNombre || 'Producto'}" (Saldo actual: ${nuevoMovimiento.stockPosterior}).`
+    );
+    setTimeout(() => setFeedbackMsg(''), 6000);
+  };
+
+  const handleEgresoSuccess = (nuevoMovimiento) => {
+    fetchMovimientos();
+    setFeedbackMsg(
+      `Egreso registrado con éxito: -${nuevoMovimiento.cantidad} u. para "${nuevoMovimiento.productoNombre || 'Producto'}" (Saldo actual: ${nuevoMovimiento.stockPosterior}).`
     );
     setTimeout(() => setFeedbackMsg(''), 6000);
   };
@@ -80,6 +90,13 @@ export const Movimientos = () => {
           >
             <PlusCircle size={16} strokeWidth={1.75} />
             Ingreso de Mercadería
+          </button>
+          <button
+            onClick={() => setIsEgresoModalOpen(true)}
+            className="bg-[#f5f5f5] hover:bg-[#e5e5e5] text-[#0a0a0a] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <ArrowUpRight size={16} strokeWidth={1.75} />
+            Egreso / Venta
           </button>
           <button
             onClick={fetchMovimientos}
@@ -162,6 +179,13 @@ export const Movimientos = () => {
         isOpen={isIngresoModalOpen}
         onClose={() => setIsIngresoModalOpen(false)}
         onSuccess={handleIngresoSuccess}
+      />
+
+      {/* Modal para Egreso de Mercadería */}
+      <EgresoStockModal
+        isOpen={isEgresoModalOpen}
+        onClose={() => setIsEgresoModalOpen(false)}
+        onSuccess={handleEgresoSuccess}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import com.inventario.gds.dto.response.MovimientoResponseDTO;
 import com.inventario.gds.entity.TipoMovimiento;
 import com.inventario.gds.exception.GlobalExceptionHandler;
 import com.inventario.gds.exception.ResourceNotFoundException;
+import com.inventario.gds.exception.StockInsuficienteException;
 import com.inventario.gds.service.MovimientoStockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -235,5 +236,74 @@ class MovimientoStockControllerTest {
                 .andExpect(jsonPath("$.content[0].tipoMovimiento").value("INGRESO"))
                 .andExpect(jsonPath("$.content[0].cantidad").value(25))
                 .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    // --- Tests HU-08: Egreso de stock ---
+
+    @Test
+    @DisplayName("HU-08: Registro exitoso de egreso descuenta existencias y genera auditoría")
+    void registrarEgreso_Exitoso() throws Exception {
+        MovimientoRequestDTO request = new MovimientoRequestDTO();
+        request.setProductoId(10L);
+        request.setTipoMovimiento(TipoMovimiento.EGRESO);
+        request.setCantidad(5);
+        request.setMotivo("Venta Factura #001-9982");
+
+        MovimientoResponseDTO responseDTO = MovimientoResponseDTO.builder()
+                .id(2L)
+                .productoId(10L)
+                .productoNombre("Teclado Mecánico RGB")
+                .productoSku("PROD-001")
+                .usuarioId(2L)
+                .usuarioUsername("operador")
+                .tipoMovimiento(TipoMovimiento.EGRESO)
+                .cantidad(5)
+                .stockAnterior(30)
+                .stockPosterior(25)
+                .motivo("Venta Factura #001-9982")
+                .fechaMovimiento(LocalDateTime.now())
+                .build();
+
+        when(movimientoService.registrarMovimiento(any(MovimientoRequestDTO.class), eq("operador")))
+                .thenReturn(responseDTO);
+
+        mockMvc.perform(post("/api/movimientos")
+                        .principal(principal)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(2))
+                .andExpect(jsonPath("$.tipoMovimiento").value("EGRESO"))
+                .andExpect(jsonPath("$.cantidad").value(5))
+                .andExpect(jsonPath("$.stockAnterior").value(30))
+                .andExpect(jsonPath("$.stockPosterior").value(25))
+                .andExpect(jsonPath("$.motivo").value("Venta Factura #001-9982"));
+
+        verify(movimientoService, times(1)).registrarMovimiento(any(MovimientoRequestDTO.class), eq("operador"));
+    }
+
+    @Test
+    @DisplayName("HU-08: Rechazo de egreso cuando la cantidad supera el stock actual (HTTP 400)")
+    void registrarEgreso_StockInsuficiente_Retorna400() throws Exception {
+        MovimientoRequestDTO request = new MovimientoRequestDTO();
+        request.setProductoId(10L);
+        request.setTipoMovimiento(TipoMovimiento.EGRESO);
+        request.setCantidad(50);
+        request.setMotivo("Venta mayorista");
+
+        when(movimientoService.registrarMovimiento(any(MovimientoRequestDTO.class), eq("operador")))
+                .thenThrow(new StockInsuficienteException(
+                        "Stock insuficiente para el producto 'Teclado Mecánico RGB'. Stock disponible: 30, solicitado: 50"));
+
+        mockMvc.perform(post("/api/movimientos")
+                        .principal(principal)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Stock insuficiente"))
+                .andExpect(jsonPath("$.message").value("Stock insuficiente para el producto 'Teclado Mecánico RGB'. Stock disponible: 30, solicitado: 50"));
+
+        verify(movimientoService, times(1)).registrarMovimiento(any(MovimientoRequestDTO.class), eq("operador"));
     }
 }
