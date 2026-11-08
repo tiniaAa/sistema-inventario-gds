@@ -28,10 +28,11 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     // Listado paginado de productos activos
     Page<Producto> findByActivoTrue(Pageable pageable);
 
-    // Búsqueda paginada por nombre o SKU (HU-05)
+    // Búsqueda paginada por nombre, SKU o categoría (HU-05)
     @Query("SELECT p FROM Producto p WHERE p.activo = true AND " +
            "(LOWER(p.nombre) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%')))")
+           "LOWER(p.sku) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(p.categoria.nombre) LIKE LOWER(CONCAT('%', :query, '%')))")
     Page<Producto> searchActivos(@Param("query") String query, Pageable pageable);
 
     // Alertas de stock crítico (HU-10)
