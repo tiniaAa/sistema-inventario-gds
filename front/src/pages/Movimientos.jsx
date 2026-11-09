@@ -18,12 +18,24 @@ export const Movimientos = () => {
   const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
+  const formatFecha = (fecha) => {
+    if (!fecha) return '-';
+    if (Array.isArray(fecha)) {
+      const [year, month, day, hour = 0, minute = 0, second = 0] = fecha;
+      const d = new Date(year, month - 1, day, hour, minute, second);
+      return isNaN(d.getTime()) ? '-' : d.toLocaleString();
+    }
+    const d = new Date(fecha);
+    return isNaN(d.getTime()) ? '-' : d.toLocaleString();
+  };
+
   const fetchMovimientos = useCallback(async (pageToLoad = page) => {
+    const targetPage = typeof pageToLoad === 'number' ? pageToLoad : page;
     setLoading(true);
     setLoadError('');
     try {
       const res = await api.get('/movimientos', {
-        params: { page: pageToLoad, size: PAGE_SIZE },
+        params: { page: targetPage, size: PAGE_SIZE },
       });
       setMovimientos(res.data.content || res.data || []);
       setTotalPages(res.data.totalPages ?? 0);
@@ -119,7 +131,7 @@ export const Movimientos = () => {
             Egreso / Venta
           </button>
           <button
-            onClick={fetchMovimientos}
+            onClick={() => fetchMovimientos()}
             disabled={loading}
             title="Refrescar movimientos"
             className="bg-[#f5f5f5] hover:bg-[#e5e5e5] text-[#0a0a0a] p-2.5 rounded-[18px] text-[14px] font-medium transition-colors cursor-pointer disabled:opacity-50"
@@ -178,7 +190,7 @@ export const Movimientos = () => {
                 movimientos.map((m) => (
                   <tr key={m.id} className="hover:bg-[#fafafa] transition-colors">
                     <td className="px-4 py-3 text-[12px] text-[#737373]">
-                      {m.fechaMovimiento ? new Date(m.fechaMovimiento).toLocaleString() : '-'}
+                      {formatFecha(m.fechaMovimiento)}
                     </td>
                     <td className="px-4 py-3">{getTipoBadge(m.tipoMovimiento)}</td>
                     <td className="px-4 py-3">
