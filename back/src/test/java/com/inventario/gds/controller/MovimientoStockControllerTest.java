@@ -212,18 +212,20 @@ class MovimientoStockControllerTest {
     }
 
     @Test
-    @DisplayName("HU-07: Listado paginado de movimientos retorna HTTP 200 con contenido")
+    @DisplayName("HU-11: Historial paginado retorna movimientos con datos de auditoría")
     void listarMovimientos_Retorna200() throws Exception {
         MovimientoResponseDTO m = MovimientoResponseDTO.builder()
                 .id(1L)
                 .productoId(10L)
                 .productoNombre("Teclado Mecánico RGB")
+                .usuarioId(2L)
+                .usuarioUsername("operador")
                 .tipoMovimiento(TipoMovimiento.INGRESO)
                 .cantidad(25)
                 .stockAnterior(5)
                 .stockPosterior(30)
                 .motivo("Remito #101")
-                .fechaMovimiento(LocalDateTime.now())
+                .fechaMovimiento(LocalDateTime.of(2026, 11, 9, 1, 0))
                 .build();
 
         PageImpl<MovimientoResponseDTO> page = new PageImpl<>(List.of(m), PageRequest.of(0, 10), 1);
@@ -235,7 +237,30 @@ class MovimientoStockControllerTest {
                 .andExpect(jsonPath("$.content[0].id").value(1))
                 .andExpect(jsonPath("$.content[0].tipoMovimiento").value("INGRESO"))
                 .andExpect(jsonPath("$.content[0].cantidad").value(25))
+                .andExpect(jsonPath("$.content[0].usuarioUsername").value("operador"))
+                .andExpect(jsonPath("$.content[0].motivo").value("Remito #101"))
+                .andExpect(jsonPath("$.content[0].fechaMovimiento[0]").value(2026))
+                .andExpect(jsonPath("$.content[0].fechaMovimiento[1]").value(11))
+                .andExpect(jsonPath("$.content[0].fechaMovimiento[2]").value(9))
+                .andExpect(jsonPath("$.content[0].fechaMovimiento[3]").value(1))
+                .andExpect(jsonPath("$.content[0].fechaMovimiento[4]").value(0))
                 .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    @DisplayName("HU-11: El historial permite solicitar páginas posteriores")
+    void listarMovimientos_PaginaSolicitada() throws Exception {
+        when(movimientoService.listarMovimientos(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(2, 10), 25));
+
+        mockMvc.perform(get("/api/movimientos?page=2&size=10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.number").value(2))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalPages").value(3))
+                .andExpect(jsonPath("$.totalElements").value(25));
+
+        verify(movimientoService).listarMovimientos(PageRequest.of(2, 10));
     }
 
     // --- Tests HU-08: Egreso de stock ---

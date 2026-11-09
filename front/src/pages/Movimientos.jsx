@@ -1,35 +1,55 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
-import { ArrowDownLeft, ArrowUpRight, AlertCircle, PlusCircle, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, AlertCircle, PlusCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '../components/common/Badge';
 import { IngresoStockModal } from '../components/movimientos/IngresoStockModal';
 import { EgresoStockModal } from '../components/movimientos/EgresoStockModal';
 
+const PAGE_SIZE = 50;
+
 export const Movimientos = () => {
   const [movimientos, setMovimientos] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
   const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
-  useEffect(() => {
-    fetchMovimientos();
-  }, []);
-
-  const fetchMovimientos = async () => {
+  const fetchMovimientos = useCallback(async (pageToLoad = page) => {
     setLoading(true);
+    setLoadError('');
     try {
-      const res = await api.get('/movimientos?page=0&size=50');
+      const res = await api.get('/movimientos', {
+        params: { page: pageToLoad, size: PAGE_SIZE },
+      });
       setMovimientos(res.data.content || res.data || []);
+      setTotalPages(res.data.totalPages ?? 0);
+      setTotalElements(res.data.totalElements ?? res.data.content?.length ?? 0);
     } catch (e) {
       console.error('Error fetching movimientos', e);
+      setLoadError(e.response?.data?.message || 'No se pudo cargar el historial de movimientos.');
     } finally {
       setLoading(false);
+    }
+  }, [page]);
+
+  useEffect(() => {
+    fetchMovimientos();
+  }, [fetchMovimientos]);
+
+  const refreshAfterMovement = () => {
+    if (page === 0) {
+      fetchMovimientos(0);
+    } else {
+      setPage(0);
     }
   };
 
   const handleIngresoSuccess = (nuevoMovimiento) => {
-    fetchMovimientos();
+    refreshAfterMovement();
     setFeedbackMsg(
       `Ingreso registrado con éxito: +${nuevoMovimiento.cantidad} u. para "${nuevoMovimiento.productoNombre || 'Producto'}" (Saldo actual: ${nuevoMovimiento.stockPosterior}).`
     );
@@ -37,7 +57,7 @@ export const Movimientos = () => {
   };
 
   const handleEgresoSuccess = (nuevoMovimiento) => {
-    fetchMovimientos();
+    refreshAfterMovement();
     setFeedbackMsg(
       `Egreso registrado con éxito: -${nuevoMovimiento.cantidad} u. para "${nuevoMovimiento.productoNombre || 'Producto'}" (Saldo actual: ${nuevoMovimiento.stockPosterior}).`
     );
@@ -111,6 +131,22 @@ export const Movimientos = () => {
 
       {/* Tabla de movimientos */}
       <div className="bg-[#ffffff] rounded-[24px] border border-[#e5e5e5] shadow-[0_0_0_1px_rgba(23,23,23,0.05),0_1px_3px_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] overflow-hidden">
+        {loadError && (
+          <div className="flex items-center justify-between gap-4 border-b border-[#e5e5e5] bg-[#fafafa] px-4 py-3 text-[14px] text-[#0a0a0a]" role="alert">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0 text-[#e7000b]" />
+              <span>{loadError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => fetchMovimientos()}
+              disabled={loading}
+              className="shrink-0 rounded-[18px] border border-[#e5e5e5] px-3 py-1.5 text-[13px] font-medium hover:bg-[#f5f5f5] disabled:opacity-50"
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[14px]">
             <thead className="bg-[#fafafa] text-[12px] uppercase text-[#737373] font-medium">
@@ -135,7 +171,7 @@ export const Movimientos = () => {
               ) : movimientos.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="text-center py-8 text-[#737373] text-[14px]">
-                    No hay registros de movimientos en el sistema.
+                    {loadError ? 'No se pudo mostrar el historial.' : 'No hay registros de movimientos en el sistema.'}
                   </td>
                 </tr>
               ) : (
@@ -171,6 +207,34 @@ export const Movimientos = () => {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-col gap-3 border-t border-[#e5e5e5] px-4 py-3 text-[13px] text-[#737373] sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            {totalElements === 0
+              ? '0 movimientos'
+              : `Mostrando ${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalElements)} de ${totalElements} movimientos`}
+          </span>
+          <div className="flex items-center gap-3">
+            <span>Página {page + 1} de {Math.max(totalPages, 1)}</span>
+            <button
+              type="button"
+              onClick={() => setPage((currentPage) => Math.max(currentPage - 1, 0))}
+              disabled={loading || page === 0}
+              aria-label="Página anterior"
+              className="rounded-[18px] border border-[#e5e5e5] p-2 text-[#0a0a0a] hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((currentPage) => Math.min(currentPage + 1, totalPages - 1))}
+              disabled={loading || totalPages === 0 || page >= totalPages - 1}
+              aria-label="Página siguiente"
+              className="rounded-[18px] border border-[#e5e5e5] p-2 text-[#0a0a0a] hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

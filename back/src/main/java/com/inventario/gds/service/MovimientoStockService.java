@@ -77,7 +77,7 @@ public class MovimientoStockService {
 
     @Transactional(readOnly = true)
     public Page<MovimientoResponseDTO> listarMovimientos(Pageable pageable) {
-        return movimientoRepository.findAllByOrderByFechaMovimientoDesc(pageable)
+        return movimientoRepository.findAllByOrderByFechaMovimientoDescIdDesc(pageable)
                 .map(this::mapToDTO);
     }
 

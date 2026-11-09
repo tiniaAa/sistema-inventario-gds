@@ -10,6 +10,6 @@ import java.util.List;
 
 @Repository
 public interface MovimientoStockRepository extends JpaRepository<MovimientoStock, Long> {
-    Page<MovimientoStock> findAllByOrderByFechaMovimientoDesc(Pageable pageable);
+    Page<MovimientoStock> findAllByOrderByFechaMovimientoDescIdDesc(Pageable pageable);
     List<MovimientoStock> findByProductoIdOrderByFechaMovimientoDesc(Long productoId);
 }
