@@ -39,14 +39,14 @@
 | 6 | **Gestión de categorías:** Como administrador, quiero crear, editar y listar categorías para organizar y segmentar los productos en depósito. | Baja | @mateomujica | Terminada |
 | 7 | **Ingreso de stock:** Como operador, quiero registrar la entrada de unidades asociada a un remito o proveedor para sumar existencia física al sistema. | Alta | @tiniaAa | Terminada |
 | 8 | **Egreso de stock:** Como operador, quiero registrar la salida de mercadería con su motivo correspondiente (venta, traslado) para descontar existencias. | Alta | @tiniaAa | Terminada |
-| 9 | **Ajuste por merma/pérdida:** Como administrador, quiero registrar ajustes manuales por roturas o pérdidas justificadas para corregir desvíos con el stock real. | Media | @tiniaAa | Pendiente |
+| 9 | **Ajuste por merma/pérdida:** Como administrador, quiero registrar ajustes manuales por roturas o pérdidas justificadas para corregir desvíos con el stock real. | Media | @tiniaAa | Terminada |
 | 10 | **Alertas de stock mínimo:** Como encargado, quiero ver un indicador visual de alerta cuando un ítem caiga por debajo de su umbral mínimo para ordenar reposición. | Alta | @iFaustoo | Terminada |
 | 11 | **Historial de movimientos:** Como administrador, quiero auditar el registro cronológico de entradas y salidas con usuario, fecha y motivo para controlar desvíos. | Media | @iFaustoo | Terminada |
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Terminada |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 11/12 funcionalidades terminadas (91.67% de progreso del backlog; 0 en proceso; 1 pendiente).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 72 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 34 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP, HU-10 con 5 SP, HU-11 con 8 SP y HU-12 con 5 SP). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 12/12 funcionalidades terminadas (100% de progreso del backlog; 0 en proceso; 0 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 80 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 42 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP, HU-09 con 8 SP, HU-10 con 5 SP, HU-11 con 8 SP y HU-12 con 5 SP). Desvío actual: 0% respecto a la planificación temporal (100% de los Story Points completados).
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
@@ -57,14 +57,14 @@
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
 *   **Tareas seleccionadas:** IDs 7, 8, 9, 10, 11, 12 (Total: 42 Story Points).
-*   **Estado:** En proceso (HU-07, HU-08, HU-10, HU-11 y HU-12 Terminadas; HU-09 Pendiente).
+*   **Estado:** Terminada (HU-07, HU-08, HU-09, HU-10, HU-11 y HU-12 Terminadas - 100% de la Etapa 2 completada con 42 SP).
 
 ## 9. Posibles Problemas (Requisito: Mínimo 4)
 *   **Riesgo 1 (Concurrencia en actualización de stock):** Dos operadores registran egresos o ingresos simultáneos del mismo producto → **Consecuencia:** Inconsistencia de datos, saldo de stock negativo y condiciones de carrera (race conditions) en la base de datos → **Estrategia de mitigación:** Implementar transacciones de base de datos con bloqueo pesimista (`findByIdForUpdate` / `SELECT FOR UPDATE`) a nivel ORM, nivel de aislamiento serializable/read committed y restricciones relacionales de constraint (`CHECK (stock_actual >= 0)`).
 *   **Riesgo 2 (Descoordinación en ramas de Git):** Múltiples desarrolladores trabajando en la entidad Producto o Movimientos en paralelo → **Consecuencia:** Conflictos graves de merge, sobrescritura de código y retrasos en la integración hacia la rama principal → **Estrategia de mitigación:** Adopción estricta de GitHub Flow, ramas cortas por funcionalidad (`feature/HU-xx`), pull requests obligatorios con revisión de al menos un par y bloqueos de merge si no pasan las validaciones locales.
 *   **Riesgo 3 (Pérdida de integridad referencial al eliminar productos o categorías vinculadas):** Intentar borrar productos o categorías que poseen historial de movimientos o ítems asignados → **Consecuencia:** Fallas de clave foránea en base de datos o pérdida de datos históricos de auditoría contable → **Estrategia de mitigación:** Aplicar patrón de baja lógica (*soft delete*) mediante un campo booleano `activo = false` o `deleted_at`, complementado con comprobaciones previas (`countByCategoriaIdAndActivoTrue`) que impidan el borrado físico (`DELETE`) en cascada.
 *   **Riesgo 4 (Desborde de alcance por funcionalidades secundarias):** Dedicar tiempo excesivo al diseño visual o pretender integrar facturación/impresión fiscal → **Consecuencia:** Incumplimiento del plazo de entrega de la Etapa 2 y falta de tiempo para testing funcional → **Estrategia de mitigación:** Priorización MoSCoW estricta en el backlog; rechazar toda funcionalidad fuera del alcance hasta tener las 12 historias básicas totalmente probadas y desplegadas.
-*   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, `CategoriaModal.jsx`, `IngresoStockModal.jsx` o `EgresoStockModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
+*   **Riesgo 5 (Pérdida de estado en formularios por expiración de token JWT):** Si la sesión del usuario expira mientras redacta datos en `ProductoModal.jsx`, `CategoriaModal.jsx`, `IngresoStockModal.jsx`, `EgresoStockModal.jsx` o `AjusteStockModal.jsx`, el interceptor de Axios fuerza la redirección al login, destruyendo el estado del formulario → **Consecuencia:** Pérdida de datos ingresados y reprocesamiento manual → **Estrategia de mitigación:** Implementar guardado temporal de borrador en `sessionStorage` o renovación transparente de token con endpoint de refresh antes del envío.
 *   **Riesgo 6 (Discrepancias entre mocks unitarios y base de datos real):** Las pruebas unitarias actuales validan controladores con MockMvc y repositorios simulados, sin testear constraints DDL directos en el motor PostgreSQL real → **Consecuencia:** Falsos positivos en pruebas ante violaciones de restricciones físicas (`CHECK (stock_actual >= 0)`) o bloqueos de transacciones concurrentes → **Estrategia de mitigación:** Incorporar pruebas de integración con Testcontainers ejecutando una instancia real de PostgreSQL en el flujo de CI.
 *   **Riesgo 7 (Desincronización de categorías activas en modales abiertos de edición):** Si una categoría es dada de baja por un administrador mientras un operador edita un producto con el modal abierto → **Consecuencia:** La interfaz permite seleccionar una categoría inactiva y la operación falla recién en el backend con HTTP 400 sin advertencia reactiva previa → **Estrategia de mitigación:** Capturar el error 400 con mensaje semántico en el cliente ofreciendo recargar las categorías activas, o integrar sondeo/WebSockets para invalidación en caliente del selector.
 *   **Riesgo 8 (Irreversibilidad de bajas lógicas sin mecanismo de reactivación en productos):** Ausencia de endpoints o interfaz para reactivar productos (`activo = true`) inhabilitados por equivocación → **Consecuencia:** Imposibilidad de restaurar ítems deshabilitados por error desde la aplicación web, obligando a intervenciones manuales en la base de datos SQL con riesgo de alterar auditorías → **Estrategia de mitigación:** Diseñar un endpoint `PATCH /api/productos/{id}/reactivar` restringido exclusivamente al rol `ADMIN` con diálogo de confirmación en la UI (análogo al implementado exitosamente en categorías).
@@ -211,6 +211,11 @@
     *   **Evidencia:** La exportación de inventario valorizado a formato CSV expone riesgos de seguridad si las celdas de texto (nombres, SKUs) inician con caracteres de fórmulas (`=`, `+`, `-`, `@`), permitiendo ataques de *CSV Injection* en aplicaciones como Excel; además, iterar sobre la colección sin inicializar relaciones lazy dispara el problema de N+1 consultas sobre `categoria`, y Excel no detecta caracteres especiales (acentos/tildes) sin la presencia del BOM UTF-8 (`\uFEFF`).
     *   **Resultado:** En `ReporteController.java` se implementó saneamiento estricto (`csvText`) anteponiendo comilla simple a valores con disparadores de fórmula y escapando comillas dobles (`""`), se integró `\uFEFF` en la cabecera CSV para compatibilidad nativa con hojas de cálculo, se optimizó `ProductoRepository.findAllForInventoryExport` con `JOIN FETCH p.categoria` para resolver el catálogo en una sola consulta SQL, y en `Reportes.jsx` se añadió liberación de memoria con `revokeObjectURL` tras la descarga del blob (validado con 3 tests MockMvc y 60 tests verdes globales).
     *   **Aprendizaje:** La generación de archivos exportables consumidos por software de terceros (Excel, LibreOffice) debe neutralizar activamente inyecciones de fórmulas y asegurar metadatos de encoding (BOM); paralelamente, los reportes volumétricos exigen `JOIN FETCH` para blindar el rendimiento del motor relacional contra queries N+1.
+
+28. **Decisión:** Autorización asimétrica preventiva en interfaz visual (Defense-in-Depth) y resolución de encoding UTF-8 estricto en arnés de pruebas para ajustes manuales de stock.
+    *   **Evidencia:** La HU-09 restringe los ajustes manuales por merma o rotura exclusivamente al rol `ADMIN`, mientras que el endpoint `/api/movimientos` en `SecurityConfig.java` admite tanto a `OPERADOR` como a `ADMIN` para no bloquear los flujos ordinarios de ingresos y egresos (HU-07 y HU-08); asimismo, alteraciones previas en `MovimientoStockControllerTest.java` bajo Windows corrompieron caracteres diacríticos (`'Mecǭnico'` en lugar de `'Mecánico'`), impidiendo el calce de cadenas en pruebas unitarias.
+    *   **Resultado:** Se implementó `AjusteStockModal.jsx` y se integró en `Movimientos.jsx` con el hook `useAuth()`, deshabilitando el disparador con `cursor-not-allowed` y tooltip explicativo ante usuarios sin rol `ADMIN`, incorporando a su vez balance proyectado en tiempo real con bloqueo si la merma excede las existencias; en backend se saneó el arnés de test con codificación UTF-8 sin BOM y se agregaron 3 pruebas MockMvc (`registrarAjusteMerma_Exitoso`, `registrarAjusteMerma_StockInsuficiente_Retorna400` y `registrarAjusteSobrante_Exitoso`), totalizando 13 tests en `MovimientoStockControllerTest` y una suite global de 63 tests verdes.
+    *   **Aprendizaje:** Cuando un mismo recurso REST concentra operaciones con niveles disímiles de autorización jerárquica, la interfaz debe anticipar activamente las restricciones operativas sin degradar la usabilidad; simultáneamente, la validación de código fuente en plataformas Windows exige preservar codificación UTF-8 estricta para evitar discrepancias en strings de prueba.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -362,7 +367,7 @@ erDiagram
 
 ### 21.2 Backend (Java + Spring Boot)
 *   **Arquitectura en Capas:**
-    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`, `/api/categorias`), recibe DTOs validados con `@Valid`, recupera al usuario autenticado mediante `Principal` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 204, 400, 401, 403, 404, 409).
+    *   `Controller`: Define endpoints REST (`/api/auth`, `/api/productos`, `/api/movimientos`, `/api/categorias`, `/api/reportes`), recibe DTOs validados con `@Valid`, recupera al usuario autenticado mediante `Principal` y retorna `ResponseEntity<T>` con códigos HTTP semánticos (200, 201, 204, 400, 401, 403, 404, 409).
     *   `Service`: Contiene la lógica de negocio. Para movimientos de stock utiliza métodos anotados con `@Transactional`. En la consulta del producto aplica bloqueo pesimista (`@Lock(LockModeType.PESSIMISTIC_WRITE)` en `findByIdForUpdate`) para evitar condiciones de carrera si dos operadores registran movimientos concurrentes, actualizando atómicamente el saldo e insertando el registro inmutable en `movimientos_stock`.
     *   `Repository`: Interfaces que extienden de `JpaRepository<T, ID>` para operaciones CRUD, consultas de conteo relacional (`countByCategoriaIdAndActivoTrue`), verificaciones de unicidad ignorando mayúsculas y exclusión de identidad propia (`existsByNombreIgnoreCaseAndIdNot`), bloqueo pesimista y consultas derivadas con `Pageable` para la paginación del lado del servidor.
     *   `Security`: Configuración de `SecurityFilterChain` con política `SessionCreationPolicy.STATELESS`, handlers semánticos para excepciones de autenticación/autorización y filtro JWT personalizado (`JwtAuthenticationFilter`) que extrae el token del header `Authorization: Bearer <token>`, autenticando el contexto de seguridad.
@@ -377,7 +382,7 @@ erDiagram
 *   **Módulos de Vista:**
     *   *Catálogo:* Tabla paginada consumiendo `page` y `size` del backend, con barras de búsqueda reactivas, modal dual para alta y modificación comercial de productos, modal de baja lógica con acento destructivo y control de permisos por rol.
     *   *Categorías:* Vista administrativa con filtrado reactivo por estado (Todas, Activas, Inactivas), búsqueda en tiempo real, modal dual de creación/edición con contadores de caracteres (`CategoriaModal.jsx`), modal de confirmación de baja lógica con advertencia ante productos vinculados (`ConfirmCategoriaModal.jsx`) y endpoint de reactivación.
-    *   *Operaciones de Depósito:* Módulo de trazabilidad y movimientos (`Movimientos.jsx`) con botón de refresco manual (`RefreshCw`), tabla paginada de auditoría, modal de ingreso (`IngresoStockModal.jsx`) y modal reactivo de egreso de mercadería (`EgresoStockModal.jsx`) con cálculo en vivo de existencias remanentes (`stockActual - cantidad`), bloqueo automático de sobregiro y validaciones defensivas.
+    *   *Operaciones de Depósito:* Módulo de trazabilidad y movimientos (`Movimientos.jsx`) con botón de refresco manual (`RefreshCw`), tabla paginada de auditoría (50/pág), modal de ingreso (`IngresoStockModal.jsx`), modal reactivo de egreso (`EgresoStockModal.jsx`) y modal de ajuste manual de stock por merma o rotura (`AjusteStockModal.jsx`) con cálculo en vivo de existencias remanentes, bloqueo automático de sobregiro y validaciones defensivas.
     *   *Dashboard / Alertas:* Indicadores visuales y tablas cuando `stock_actual <= stock_minimo` y botón de exportación de reporte CSV.
 
 ---
@@ -437,12 +442,13 @@ front/
     │   │   └── ConfirmCategoriaModal.jsx # Modal de confirmación de baja lógica con alerta de productos vinculados
     │   └── movimientos/
     │       ├── IngresoStockModal.jsx # Modal de ingreso de mercadería con cálculo de stock proyectado (HU-07)
-    │       └── EgresoStockModal.jsx  # Modal de egreso con validación de stock y advertencia de sobregiro (HU-08)
+    │       ├── EgresoStockModal.jsx  # Modal de egreso con validación de stock y advertencia de sobregiro (HU-08)
+    │       └── AjusteStockModal.jsx  # Modal de ajuste manual de stock por merma o rotura con cálculo proyectado y control de rol (HU-09)
     └── pages/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
         ├── Dashboard.jsx            # Hub operativo con alertas de stock crítico, refresco manual y reintento (HU-10)
         ├── Productos.jsx            # Catálogo con búsqueda, modal dual, modal de baja y control de rol (HU-02..05)
-        ├── Movimientos.jsx          # Historial paginado (50/pág), auditoría con usuario/motivo, reintento y modales (HU-07, HU-08, HU-11)
+        ├── Movimientos.jsx          # Historial paginado (50/pág), auditoría con usuario/motivo, reintento y modales (HU-07, HU-08, HU-09, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
         └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV con revocación de blob (HU-12)
 ```
@@ -496,7 +502,7 @@ back/
     │       │   │   ├── LoginRequest.java         # DTO con username y password validados
     │       │   │   ├── ProductoRequestDTO.java   # DTO para alta/edición de producto con validaciones
     │       │   │   ├── CategoriaRequestDTO.java  # DTO para alta/edición de categoría con validaciones
-    │       │   │   └── MovimientoRequestDTO.java # DTO para registrar ingresos o egresos
+    │       │   │   └── MovimientoRequestDTO.java # DTO para registrar ingresos, egresos y ajustes
     │       │   └── response/
     │       │       ├── AuthResponse.java         # Retorna token JWT y datos resumidos del usuario
     │       │       ├── ProductoResponseDTO.java  # Retorna datos del producto sin exponer la entidad
@@ -511,7 +517,7 @@ back/
     │       └── controller/
     │           ├── AuthController.java            # Endpoints /api/auth/login
     │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta, edición, baja, alertas)
-    │           ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
+    │           ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/ajustes/auditoría)
     │           ├── CategoriaController.java       # Endpoints /api/categorias (CRUD, reactivación, conteos)
     │           └── ReporteController.java         # Endpoints /api/reportes/inventario/csv (exportación CSV, saneamiento de fórmulas, ADMIN)
     └── test/
@@ -519,7 +525,7 @@ back/
         │   ├── ProductoControllerTest.java        # 22 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja, HU-05 búsqueda, HU-10 alertas)
         │   ├── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         │   ├── CategoriaControllerTest.java       # 17 tests MockMvc (HU-06 CRUD, reactivación, validaciones)
-        │   ├── MovimientoStockControllerTest.java # 10 tests MockMvc (HU-07 ingreso, HU-08 egreso, HU-11 historial paginado/auditoría)
+        │   ├── MovimientoStockControllerTest.java # 13 tests MockMvc (HU-07 ingreso, HU-08 egreso, HU-09 ajustes merma/sobrante, HU-11 historial paginado/auditoría)
         │   └── ReporteControllerTest.java         # 3 tests MockMvc (HU-12 exportación CSV, neutralización fórmulas, valor total)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
