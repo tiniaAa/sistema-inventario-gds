@@ -39,6 +39,9 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     @Query("SELECT p FROM Producto p WHERE p.activo = true AND p.stockActual <= p.stockMinimo ORDER BY p.stockActual ASC")
     List<Producto> findProductosCriticos();
 
+    @Query("SELECT p FROM Producto p JOIN FETCH p.categoria ORDER BY p.nombre ASC, p.id ASC")
+    List<Producto> findAllForInventoryExport();
+
     Long countByCategoriaId(Long categoriaId);
     Long countByCategoriaIdAndActivoTrue(Long categoriaId);
 }

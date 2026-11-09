@@ -11,13 +11,14 @@ export const Reportes = () => {
       const response = await api.get('/reportes/inventario/csv', {
         responseType: 'blob',
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = url;
       link.setAttribute('download', `inventario_${new Date().toISOString().slice(0, 10)}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(url), 1000);
     } catch (e) {
       console.error('Error al exportar CSV', e);
       alert('Error al descargar el archivo CSV');
