@@ -1,35 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/axios';
-import { Package, AlertTriangle, ArrowLeftRight, ArrowRight, Boxes, FileSpreadsheet } from 'lucide-react';
+import { Package, AlertTriangle, ArrowLeftRight, ArrowRight, RefreshCw } from 'lucide-react';
 import { StockBadge } from '../components/common/Badge';
 
 export const Dashboard = () => {
   const [metrics, setMetrics] = useState({
     totalProductos: 0,
-    productosCriticos: 0,
     ingresosHoy: 0,
     egresosHoy: 0,
   });
   const [alertas, setAlertas] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [alertasLoading, setAlertasLoading] = useState(true);
+  const [alertasError, setAlertasError] = useState('');
+
+  const fetchAlertas = async () => {
+    setAlertasLoading(true);
+    setAlertasError('');
+    try {
+      const response = await api.get('/productos/alertas');
+      setAlertas(response.data);
+    } catch (error) {
+      console.error('Error al cargar alertas de stock mínimo', error);
+      setAlertasError('No se pudieron cargar las alertas de stock. Verifica la conexión e intenta nuevamente.');
+    } finally {
+      setAlertasLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const [resMetrics, resAlertas] = await Promise.allSettled([
-          api.get('/dashboard/metricas'),
-          api.get('/productos/alertas')
-        ]);
-        if (resMetrics.status === 'fulfilled') setMetrics(resMetrics.value.data);
-        if (resAlertas.status === 'fulfilled') setAlertas(resAlertas.value.data);
-      } catch (e) {
-        console.error('Error fetching dashboard data', e);
-      } finally {
-        setLoading(false);
-      }
+    const fetchDashboardMetrics = async () => {
+      const [resMetrics] = await Promise.allSettled([api.get('/dashboard/metricas')]);
+      if (resMetrics.status === 'fulfilled') setMetrics(resMetrics.value.data);
     };
-    fetchDashboardData();
+
+    fetchDashboardMetrics();
+    fetchAlertas();
   }, []);
 
   return (
@@ -107,9 +113,13 @@ export const Dashboard = () => {
             </p>
           </div>
           <div className="pt-5 mt-5 border-t border-[#e5e5e5] flex items-center justify-between">
-            <span className="text-[14px] font-semibold text-[#0a0a0a] tabular-nums">{metrics.productosCriticos} ítems críticos</span>
-            <span className="text-[11px] px-2.5 py-0.5 rounded-[18px] bg-[#171717] text-[#fafafa] font-medium">
-              Supervisión Activa
+            <span className="text-[14px] font-semibold text-[#0a0a0a] tabular-nums">
+              {alertasLoading || alertasError ? '—' : alertas.length} ítems críticos
+            </span>
+            <span className={`text-[11px] px-2.5 py-0.5 rounded-[18px] font-medium ${
+              alertasError ? 'border border-[#e7000b] text-[#e7000b]' : 'bg-[#171717] text-[#fafafa]'
+            }`}>
+              {alertasLoading ? 'Consultando...' : alertasError ? 'Error al consultar' : 'Supervisión Activa'}
             </span>
           </div>
         </div>
@@ -125,11 +135,40 @@ export const Dashboard = () => {
             </h2>
             <p className="text-[12px] text-[#737373] mt-0.5">Listado generado por umbral automático de stock mínimo</p>
           </div>
-          <span className="text-[12px] text-[#737373] hidden sm:inline">Actualizado en tiempo real</span>
+          <div className="flex items-center gap-3">
+            <span className="text-[12px] text-[#737373] hidden sm:inline">
+              {alertasLoading ? 'Consultando alertas...' : 'Datos al momento de la consulta'}
+            </span>
+            <button
+              type="button"
+              onClick={fetchAlertas}
+              disabled={alertasLoading}
+              aria-label="Actualizar alertas de stock"
+              title="Actualizar alertas"
+              className="p-2 rounded-[18px] bg-[#f5f5f5] text-[#0a0a0a] hover:bg-[#e5e5e5] disabled:opacity-50"
+            >
+              <RefreshCw size={16} strokeWidth={1.75} className={alertasLoading ? 'animate-spin' : ''} />
+            </button>
+          </div>
         </div>
 
         <div className="p-6">
-          {alertas.length === 0 ? (
+          {alertasLoading ? (
+            <div className="text-center py-8 text-[#737373] text-[14px]" role="status">
+              Cargando alertas de stock mínimo...
+            </div>
+          ) : alertasError ? (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 py-8 text-center" role="alert">
+              <p className="text-[14px] text-[#e7000b]">{alertasError}</p>
+              <button
+                type="button"
+                onClick={fetchAlertas}
+                className="px-3 py-2 rounded-[18px] border border-[#e5e5e5] text-[13px] font-medium text-[#0a0a0a] hover:bg-[#f5f5f5]"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : alertas.length === 0 ? (
             <div className="text-center py-8 text-[#737373] text-[14px]">
               No se detectaron productos en estado crítico de reposición.
             </div>

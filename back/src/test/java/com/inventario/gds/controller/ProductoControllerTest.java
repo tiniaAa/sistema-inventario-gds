@@ -18,12 +18,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -661,5 +666,52 @@ class ProductoControllerTest {
 
         verify(productoRepository, times(1)).searchActivos("mouse", any(Pageable.class));
         verify(productoRepository, never()).findByActivoTrue(any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("HU-10: Alertas de stock crítico incluyen stock actual y mínimo")
+    void obtenerAlertas_RetornaProductosCriticos() throws Exception {
+        Categoria categoria = Categoria.builder()
+                .id(1L)
+                .nombre("Electrónica")
+                .activo(true)
+                .build();
+        Producto productoCritico = Producto.builder()
+                .id(7L)
+                .sku("P-007")
+                .nombre("Mouse inalámbrico")
+                .categoria(categoria)
+                .precioUnitario(new BigDecimal("12000.00"))
+                .stockActual(2)
+                .stockMinimo(3)
+                .activo(true)
+                .build();
+
+        when(productoRepository.findProductosCriticos()).thenReturn(List.of(productoCritico));
+
+        mockMvc.perform(get("/api/productos/alertas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(7))
+                .andExpect(jsonPath("$[0].sku").value("P-007"))
+                .andExpect(jsonPath("$[0].stockActual").value(2))
+                .andExpect(jsonPath("$[0].stockMinimo").value(3))
+                .andExpect(jsonPath("$[0].activo").value(true));
+
+        verify(productoRepository).findProductosCriticos();
+    }
+
+    @Test
+    @DisplayName("HU-10: Alertas de stock crítico retorna lista vacía si no hay productos críticos")
+    void obtenerAlertas_SinProductosCriticos_RetornaListaVacia() throws Exception {
+        when(productoRepository.findProductosCriticos()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/productos/alertas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+
+        verify(productoRepository).findProductosCriticos();
     }
 }
