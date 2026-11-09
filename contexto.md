@@ -42,11 +42,11 @@
 | 9 | **Ajuste por merma/pérdida:** Como administrador, quiero registrar ajustes manuales por roturas o pérdidas justificadas para corregir desvíos con el stock real. | Media | @tiniaAa | Pendiente |
 | 10 | **Alertas de stock mínimo:** Como encargado, quiero ver un indicador visual de alerta cuando un ítem caiga por debajo de su umbral mínimo para ordenar reposición. | Alta | @iFaustoo | Terminada |
 | 11 | **Historial de movimientos:** Como administrador, quiero auditar el registro cronológico de entradas y salidas con usuario, fecha y motivo para controlar desvíos. | Media | @iFaustoo | Terminada |
-| 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
+| 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Terminada |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 10/12 funcionalidades terminadas (83.33% de progreso del backlog; 0 en proceso; 2 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 67 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 29 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP, HU-10 con 5 SP y HU-11 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 11/12 funcionalidades terminadas (91.67% de progreso del backlog; 0 en proceso; 1 pendiente).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 72 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 34 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP, HU-10 con 5 SP, HU-11 con 8 SP y HU-12 con 5 SP). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
@@ -57,7 +57,7 @@
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
 *   **Tareas seleccionadas:** IDs 7, 8, 9, 10, 11, 12 (Total: 42 Story Points).
-*   **Estado:** En proceso (HU-07, HU-08, HU-10 y HU-11 Terminadas; HU-09 y HU-12 Pendientes).
+*   **Estado:** En proceso (HU-07, HU-08, HU-10, HU-11 y HU-12 Terminadas; HU-09 Pendiente).
 
 ## 9. Posibles Problemas (Requisito: Mínimo 4)
 *   **Riesgo 1 (Concurrencia en actualización de stock):** Dos operadores registran egresos o ingresos simultáneos del mismo producto → **Consecuencia:** Inconsistencia de datos, saldo de stock negativo y condiciones de carrera (race conditions) en la base de datos → **Estrategia de mitigación:** Implementar transacciones de base de datos con bloqueo pesimista (`findByIdForUpdate` / `SELECT FOR UPDATE`) a nivel ORM, nivel de aislamiento serializable/read committed y restricciones relacionales de constraint (`CHECK (stock_actual >= 0)`).
@@ -206,6 +206,11 @@
     *   **Evidencia:** Durante la implementación de la paginación de 50 ítems por página para HU-11, las pruebas de MockMvc arrojaron aserciones fallidas porque Jackson serializa instancias `LocalDateTime` como arrays numéricos enteros `[YYYY, MM, DD, HH, mm]`; ordenar exclusivamente por `fechaMovimiento` provocaba orden no determinista si múltiples registros compartían el mismo instante; además, en frontend el botón de refresco pasaba el evento sintético como número de página (`page=[object Object]`) y el formateador de fechas arrojaba `"Invalid Date"` ante arreglos numéricos.
     *   **Resultado:** Se actualizaron las aserciones de prueba en `MovimientoStockControllerTest.java` (10 tests verdes), se refinó el método en `MovimientoStockRepository` a `findAllByOrderByFechaMovimientoDescIdDesc(Pageable)` para garantizar desempate determinista, y en `Movimientos.jsx` se introdujo un formateador resiliente (`formatFecha`) compatible con arrays e ISO strings, saneando a su vez el argumento `pageToLoad` ante eventos sintéticos en la llamada a `fetchMovimientos()`.
     *   **Aprendizaje:** En consultas paginadas con alta tasa de inserción, siempre debe utilizarse un ordenamiento compuesto con la clave primaria (`id`) como criterio de desempate para evitar registros duplicados u omitidos entre páginas; simultáneamente, la serialización temporal debe manejarse con adaptadores defensivos en frontend para evitar inconsistencias de formato entre distintos serializadores JSON.
+
+27. **Decisión:** Mitigación de inyección de fórmulas CSV (Formula Injection), prevención de N+1 con `JOIN FETCH` y soporte de UTF-8 con BOM en exportación contable.
+    *   **Evidencia:** La exportación de inventario valorizado a formato CSV expone riesgos de seguridad si las celdas de texto (nombres, SKUs) inician con caracteres de fórmulas (`=`, `+`, `-`, `@`), permitiendo ataques de *CSV Injection* en aplicaciones como Excel; además, iterar sobre la colección sin inicializar relaciones lazy dispara el problema de N+1 consultas sobre `categoria`, y Excel no detecta caracteres especiales (acentos/tildes) sin la presencia del BOM UTF-8 (`\uFEFF`).
+    *   **Resultado:** En `ReporteController.java` se implementó saneamiento estricto (`csvText`) anteponiendo comilla simple a valores con disparadores de fórmula y escapando comillas dobles (`""`), se integró `\uFEFF` en la cabecera CSV para compatibilidad nativa con hojas de cálculo, se optimizó `ProductoRepository.findAllForInventoryExport` con `JOIN FETCH p.categoria` para resolver el catálogo en una sola consulta SQL, y en `Reportes.jsx` se añadió liberación de memoria con `revokeObjectURL` tras la descarga del blob (validado con 3 tests MockMvc y 60 tests verdes globales).
+    *   **Aprendizaje:** La generación de archivos exportables consumidos por software de terceros (Excel, LibreOffice) debe neutralizar activamente inyecciones de fórmulas y asegurar metadatos de encoding (BOM); paralelamente, los reportes volumétricos exigen `JOIN FETCH` para blindar el rendimiento del motor relacional contra queries N+1.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -439,7 +444,7 @@ front/
         ├── Productos.jsx            # Catálogo con búsqueda, modal dual, modal de baja y control de rol (HU-02..05)
         ├── Movimientos.jsx          # Historial paginado (50/pág), auditoría con usuario/motivo, reintento y modales (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
-        └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
+        └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV con revocación de blob (HU-12)
 ```
 
 ---
@@ -484,7 +489,7 @@ back/
     │       ├── repository/
     │       │   ├── UsuarioRepository.java       # Consultas por username/email
     │       │   ├── CategoriaRepository.java     # Consultas de categorías activas, derivadas y por nombre case-insensitive
-    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, countByCategoriaIdAndActivoTrue, búsqueda por categoría/nombre/SKU, paginación
+    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, countByCategoriaId, búsqueda, paginación y exportación (findAllForInventoryExport)
     │       │   └── MovimientoStockRepository.java # Historial cronológico con orden descendente compuesto (fechaMovimiento, id)
     │       ├── dto/
     │       │   ├── request/
@@ -507,13 +512,15 @@ back/
     │           ├── AuthController.java            # Endpoints /api/auth/login
     │           ├── ProductoController.java        # Endpoints /api/productos (CRUD, alta, edición, baja, alertas)
     │           ├── MovimientoStockController.java # Endpoints /api/movimientos (entradas/salidas/auditoría)
-    │           └── CategoriaController.java       # Endpoints /api/categorias (CRUD, reactivación, conteos)
+    │           ├── CategoriaController.java       # Endpoints /api/categorias (CRUD, reactivación, conteos)
+    │           └── ReporteController.java         # Endpoints /api/reportes/inventario/csv (exportación CSV, saneamiento de fórmulas, ADMIN)
     └── test/
         ├── java/com/inventario/gds/controller/
         │   ├── ProductoControllerTest.java        # 22 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja, HU-05 búsqueda, HU-10 alertas)
         │   ├── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         │   ├── CategoriaControllerTest.java       # 17 tests MockMvc (HU-06 CRUD, reactivación, validaciones)
-        │   └── MovimientoStockControllerTest.java # 10 tests MockMvc (HU-07 ingreso, HU-08 egreso, HU-11 historial paginado/auditoría)
+        │   ├── MovimientoStockControllerTest.java # 10 tests MockMvc (HU-07 ingreso, HU-08 egreso, HU-11 historial paginado/auditoría)
+        │   └── ReporteControllerTest.java         # 3 tests MockMvc (HU-12 exportación CSV, neutralización fórmulas, valor total)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
