@@ -19,6 +19,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import java.util.List;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -27,6 +33,7 @@ import java.security.Principal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,6 +67,7 @@ class ProductoControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(productoController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
@@ -571,5 +579,95 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.message").value("El producto ya se encuentra dado de baja"));
 
         verify(productoRepository, never()).save(any());
+    }
+
+    // --- Tests HU-05: Listado y búsqueda paginada ---
+
+    @Test
+    @DisplayName("HU-05: Listado paginado de productos activos sin filtro de búsqueda")
+    void listarProductos_SinBusqueda_RetornaPaginaDeActivos() throws Exception {
+        Categoria categoria = Categoria.builder()
+                .id(1L)
+                .nombre("Electrónica")
+                .activo(true)
+                .build();
+
+        Producto p1 = Producto.builder()
+                .id(1L)
+                .sku("P-001")
+                .nombre("Mouse Inalámbrico")
+                .categoria(categoria)
+                .precioUnitario(new BigDecimal("15000.00"))
+                .stockActual(10)
+                .stockMinimo(3)
+                .activo(true)
+                .build();
+
+        Producto p2 = Producto.builder()
+                .id(2L)
+                .sku("P-002")
+                .nombre("Teclado Mecánico")
+                .categoria(categoria)
+                .precioUnitario(new BigDecimal("25000.00"))
+                .stockActual(5)
+                .stockMinimo(2)
+                .activo(true)
+                .build();
+
+        List<Producto> contenido = List.of(p1, p2);
+        Page<Producto> pagina = new PageImpl<>(contenido, PageRequest.of(0, 10), 2);
+
+        when(productoRepository.findByActivoTrue(any(Pageable.class))).thenReturn(pagina);
+
+        mockMvc.perform(get("/api/productos")
+                .param("page", "0")
+                .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].sku").value("P-001"))
+                .andExpect(jsonPath("$.content[1].sku").value("P-002"))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.totalElements").value(2));
+
+        verify(productoRepository, times(1)).findByActivoTrue(any(Pageable.class));
+        verify(productoRepository, never()).searchActivos(anyString(), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("HU-05: Búsqueda paginada por nombre, SKU o categoría")
+    void listarProductos_ConBusqueda_RetornaFiltrados() throws Exception {
+        Categoria categoria = Categoria.builder()
+                .id(1L)
+                .nombre("Electrónica")
+                .activo(true)
+                .build();
+
+        Producto p1 = Producto.builder()
+                .id(1L)
+                .sku("P-001")
+                .nombre("Mouse Inalámbrico")
+                .categoria(categoria)
+                .precioUnitario(new BigDecimal("15000.00"))
+                .stockActual(10)
+                .stockMinimo(3)
+                .activo(true)
+                .build();
+
+        List<Producto> contenido = List.of(p1);
+        Page<Producto> pagina = new PageImpl<>(contenido, PageRequest.of(0, 10), 1);
+
+        when(productoRepository.searchActivos(eq("mouse"), any(Pageable.class))).thenReturn(pagina);
+
+        mockMvc.perform(get("/api/productos")
+                .param("page", "0")
+                .param("size", "10")
+                .param("search", "mouse"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].nombre").value("Mouse Inalámbrico"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+
+        verify(productoRepository, times(1)).searchActivos(eq("mouse"), any(Pageable.class));
+        verify(productoRepository, never()).findByActivoTrue(any(Pageable.class));
     }
 }
