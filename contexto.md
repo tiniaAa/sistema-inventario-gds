@@ -35,7 +35,7 @@
 | 2 | **Alta de producto:** Como operador, quiero registrar un nuevo producto con nombre, SKU, categoría, precio y stock inicial para incorporarlo al catálogo. | Alta | @mateomujica | Terminada |
 | 3 | **Modificación de producto:** Como operador, quiero editar los datos comerciales y descripción de un producto para mantener la información actualizada. | Media | @mateomujica | Terminada |
 | 4 | **Baja lógica de producto:** Como administrador, quiero deshabilitar productos obsoletos sin borrarlos físicamente para no romper la integridad de auditorías pasadas. | Media | @mateomujica | Terminada |
-| 5 | **Listado y búsqueda:** Como usuario, quiero buscar productos por nombre, SKU o categoría con paginación para encontrar ítems rápidamente. | Alta | @iFaustoo | Pendiente |
+| 5 | **Listado y búsqueda:** Como usuario, quiero buscar productos por nombre, SKU o categoría con paginación para encontrar ítems rápidamente. | Alta | @iFaustoo | Terminada |
 | 6 | **Gestión de categorías:** Como administrador, quiero crear, editar y listar categorías para organizar y segmentar los productos en depósito. | Baja | @mateomujica | Terminada |
 | 7 | **Ingreso de stock:** Como operador, quiero registrar la entrada de unidades asociada a un remito o proveedor para sumar existencia física al sistema. | Alta | @tiniaAa | Terminada |
 | 8 | **Egreso de stock:** Como operador, quiero registrar la salida de mercadería con su motivo correspondiente (venta, traslado) para descontar existencias. | Alta | @tiniaAa | Terminada |
@@ -45,14 +45,14 @@
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 7/12 funcionalidades terminadas (58.33% de progreso del backlog; 0 en proceso; 5 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 45 SP (29 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP y HU-06 con 3 SP; 16 SP en Etapa 2: HU-07 con 8 SP y HU-08 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 8/12 funcionalidades terminadas (66.67% de progreso del backlog; 0 en proceso; 4 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 54 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 16 SP en Etapa 2: HU-07 con 8 SP y HU-08 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
 *   **Propósito:** Establecer la arquitectura base, modelo de datos relacional, control de acceso y el CRUD completo de catálogo de productos y categorías.
 *   **Tareas seleccionadas:** IDs 1, 2, 3, 4, 5, 6 (Total: 38 Story Points).
-*   **Estado:** En proceso (HU-01, HU-02, HU-03, HU-04 y HU-06 Terminadas; HU-05 Pendiente).
+*   **Estado:** Terminada (HU-01, HU-02, HU-03, HU-04, HU-05 y HU-06 Terminadas - 100% de la Etapa 1 completada con 38 SP).
 
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
@@ -70,6 +70,7 @@
 *   **Riesgo 8 (Irreversibilidad de bajas lógicas sin mecanismo de reactivación en productos):** Ausencia de endpoints o interfaz para reactivar productos (`activo = true`) inhabilitados por equivocación → **Consecuencia:** Imposibilidad de restaurar ítems deshabilitados por error desde la aplicación web, obligando a intervenciones manuales en la base de datos SQL con riesgo de alterar auditorías → **Estrategia de mitigación:** Diseñar un endpoint `PATCH /api/productos/{id}/reactivar` restringido exclusivamente al rol `ADMIN` con diálogo de confirmación en la UI (análogo al implementado exitosamente en categorías).
 *   **Riesgo 9 (Opacidad de catálogo histórico de productos deshabilitados):** Las consultas de listado en `ProductoRepository` (`findByActivoTrue` y `searchActivos`) excluyen de forma permanente los registros inactivos → **Consecuencia:** Los administradores no disponen de una vista para auditar o supervisar el catálogo de productos históricos dados de baja → **Estrategia de mitigación:** Añadir un parámetro booleano `incluirInactivos` en los endpoints de catálogo y un selector de filtrado en la cabecera de la tabla de productos para usuarios con rol `ADMIN`.
 *   **Riesgo 10 (Sobrecarga de memoria por ausencia de paginación en colección de categorías):** El endpoint `GET /api/categorias` retorna la totalidad de entidades en memoria como `List<CategoriaResponseDTO>` sin paginación en servidor → **Consecuencia:** Degradación de tiempos de respuesta de red y saturación de memoria en el navegador cliente ante catálogos con cientos de categorías → **Estrategia de mitigación:** Implementar paginación del lado del servidor (*Server-Side Pagination*) utilizando `Pageable` y `Page<CategoriaResponseDTO>` en una futura iteración de optimización.
+*   **Riesgo 11 (Incompatibilidad de runtime JDK con procesadores de anotaciones de Lombok):** Si el entorno local ejecuta Maven apuntando por defecto a un JDK experimental o superior (Java 26 en `.jdks`) en vez de la versión objetivo LTS (Java 17/21) → **Consecuencia:** Fallos masivos de compilación en compiladores de anotaciones (`cannot find symbol` en métodos autogenerados como `builder()` o getters) → **Estrategia de mitigación:** Declarar y forzar la variable `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"` en scripts de build locales y estandarizar la herramienta en la documentación del equipo.
 
 ## 10 y 13. Secuencias de Decisión y Cambios (Requisito: Mínimo 4)
 1.  **Decisión:** Migrar del almacenamiento directo de contraseñas a autenticación robusta mediante JWT con hash bcrypt y expiración de tokens.
@@ -176,6 +177,21 @@
     *   **Evidencia:** Peticiones concurrentes entre múltiples operadores egresando el mismo SKU o intentos de egreso con saldo insuficiente pueden producir condiciones de carrera, errores 500 no controlados o sobrecarga innecesaria de la red si se confía únicamente en la base de datos o exclusivamente en la interfaz cliente.
     *   **Resultado:** Se implementó una estrategia en capas: en frontend (`EgresoStockModal.jsx`) se calcula en tiempo real `stockProyectado = stockActual - cantidad`, deshabilitando el botón de envío y mostrando alertas visuales destructivas (`#e7000b`) si la cantidad supera el saldo disponible; en backend (`MovimientoStockService.java`), se ejecuta bloqueo pesimista a nivel de fila (`findByIdForUpdate`) con lanzamiento de `StockInsuficienteException` (HTTP 400 Bad Request) y respaldo de constraint relacional física `CHECK (stock_actual >= 0)`.
     *   **Aprendizaje:** El cálculo y bloqueo reactivo en el cliente mejora sustancialmente la experiencia del operador y reduce tráfico espurio, pero la transacción aislada con bloqueo pesimista en base de datos es la única garantía infranqueable de consistencia ACID en sistemas de inventario transaccionales.
+
+22. **Decisión:** Ampliación del predicado de búsqueda relacional JPQL para incluir la denominación de la categoría (`LOWER(p.categoria.nombre)`).
+    *   **Evidencia:** El input de búsqueda reactivo en `Productos.jsx` anunciaba al usuario *"Buscar por nombre, SKU o categoría..."*, pero la consulta original en `ProductoRepository` (`searchActivos`) solo evaluaba `p.nombre` y `p.sku`, ignorando el nombre de la categoría asociada y arrojando listas vacías si el operador filtraba por familia de productos.
+    *   **Resultado:** Se extendió la cláusula JPQL en `ProductoRepository` añadiendo `OR LOWER(p.categoria.nombre) LIKE LOWER(CONCAT('%', :query, '%'))`, garantizando coincidencia semántica integral entre la interfaz visual y la persistencia de base de datos sin requerir mutaciones en el frontend.
+    *   **Aprendizaje:** Los criterios de consulta en endpoints de búsqueda libre deben alinearse de forma exacta con las descripciones y *placeholders* expuestos al usuario final para mantener consistencia y evitar falsos negativos en el catálogo.
+
+23. **Decisión:** Homogeneización estricta de matchers Mockito (`eq()`) y registro de `PageableHandlerMethodArgumentResolver` en tests unitarios de catálogo.
+    *   **Evidencia:** Al incorporar las pruebas de HU-05 en `ProductoControllerTest.java`, la compilación falló por omisión de imports de Spring Data (`Page`, `PageImpl`, `PageRequest`, `Pageable`, `List`), y la ejecución posterior arrojó `InvalidUseOfMatchersException` al combinar un literal directo (`"mouse"`) con un matcher (`any(Pageable.class)`), además de fallar la inyección del parámetro `Pageable` bajo `MockMvcBuilders.standaloneSetup()`.
+    *   **Resultado:** Se agregaron los imports omitidos, se envolvieron todos los argumentos esperados con matchers explícitos (`eq("mouse")`) tanto en `when()` como en `verify()`, y se inyectó `.setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())` en el `@BeforeEach`, alcanzando 20 tests verdes en el controlador de productos y 54 tests unitarios globales.
+    *   **Aprendizaje:** En Mockito, si un parámetro utiliza un argument matcher, todos los demás argumentos de la misma invocación deben utilizar matchers; asimismo, las pruebas de controladores que consumen paginación de Spring Data requieren inyectar explícitamente el resolvedor de argumentos en arquitecturas standalone.
+
+24. **Decisión:** Blindaje de codificación UTF-8 en scripts de automatización y fijación explícita de `JAVA_HOME` para compilación limpia con Lombok.
+    *   **Evidencia:** Modificaciones de archivos Java mediante scripts estándar de PowerShell (`Set-Content`) provocaron corrupción en caracteres especiales y diacríticos acentuados (`Baja lÃ³gica`). Adicionalmente, el ejecutable `mvn` resolvía un runtime experimental de Java 26 presente en `.jdks`, bloqueando el plugin de Lombok y arrojando falsos errores de símbolos no encontrados.
+    *   **Resultado:** Se revirtió la corrupción de encoding mediante control de versiones (`git checkout`), restringiendo ediciones a herramientas con soporte nativo UTF-8 sin BOM, y se estandarizó la ejecución de Maven forzando `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"`.
+    *   **Aprendizaje:** La manipulación de código fuente en Windows exige herramientas que respeten estrictamente la codificación UTF-8 sin BOM; paralelamente, entornos con múltiples JDKs instalados requieren declarar unívocamente la versión LTS de desarrollo para garantizar compilaciones reproducibles.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -454,7 +470,7 @@ back/
     │       ├── repository/
     │       │   ├── UsuarioRepository.java       # Consultas por username/email
     │       │   ├── CategoriaRepository.java     # Consultas de categorías activas, derivadas y por nombre case-insensitive
-    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, countByCategoriaIdAndActivoTrue, paginación
+    │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, countByCategoriaIdAndActivoTrue, búsqueda por categoría/nombre/SKU, paginación
     │       │   └── MovimientoStockRepository.java # Historial cronológico de movimientos
     │       ├── dto/
     │       │   ├── request/
@@ -480,7 +496,7 @@ back/
     │           └── CategoriaController.java       # Endpoints /api/categorias (CRUD, reactivación, conteos)
     └── test/
         ├── java/com/inventario/gds/controller/
-        │   ├── ProductoControllerTest.java        # 18 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja)
+        │   ├── ProductoControllerTest.java        # 20 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja, HU-05 búsqueda/listado)
         │   ├── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         │   ├── CategoriaControllerTest.java       # 17 tests MockMvc (HU-06 CRUD, reactivación, validaciones)
         │   └── MovimientoStockControllerTest.java # 9 tests MockMvc (HU-07 ingreso, HU-08 egreso, saldos, paginación)
