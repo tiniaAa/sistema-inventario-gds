@@ -186,6 +186,7 @@ class MovimientoStockControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Error de validación de campos"))
                 .andExpect(jsonPath("$.fieldErrors.motivo").value("El motivo o documento de respaldo es obligatorio"));
 
         verify(movimientoService, never()).registrarMovimiento(any(), any());
@@ -210,6 +211,8 @@ class MovimientoStockControllerTest {
 
         verify(movimientoService, never()).registrarMovimiento(any(), any());
     }
+
+    // --- Tests HU-11: Historial de movimientos ---
 
     @Test
     @DisplayName("HU-11: Historial paginado retorna movimientos con datos de auditoría")
@@ -330,5 +333,122 @@ class MovimientoStockControllerTest {
                 .andExpect(jsonPath("$.message").value("Stock insuficiente para el producto 'Teclado Mecánico RGB'. Stock disponible: 30, solicitado: 50"));
 
         verify(movimientoService, times(1)).registrarMovimiento(any(MovimientoRequestDTO.class), eq("operador"));
+    }
+
+    // --- Tests HU-09: Ajuste por merma o rotura ---
+
+    @Test
+    @DisplayName("HU-09: Registro exitoso de ajuste por merma descuenta existencias y genera auditoría")
+    void registrarAjusteMerma_Exitoso() throws Exception {
+        MovimientoRequestDTO request = new MovimientoRequestDTO();
+        request.setProductoId(10L);
+        request.setTipoMovimiento(TipoMovimiento.AJUSTE_MERMA);
+        request.setCantidad(3);
+        request.setMotivo("Rotura de empaque en sector depósito A");
+
+        MovimientoResponseDTO responseDTO = MovimientoResponseDTO.builder()
+                .id(3L)
+                .productoId(10L)
+                .productoNombre("Teclado Mecánico RGB")
+                .productoSku("PROD-001")
+                .usuarioId(1L)
+                .usuarioUsername("admin")
+                .tipoMovimiento(TipoMovimiento.AJUSTE_MERMA)
+                .cantidad(3)
+                .stockAnterior(25)
+                .stockPosterior(22)
+                .motivo("Rotura de empaque en sector depósito A")
+                .fechaMovimiento(LocalDateTime.now())
+                .build();
+
+        when(movimientoService.registrarMovimiento(any(MovimientoRequestDTO.class), eq("admin")))
+                .thenReturn(responseDTO);
+
+        Principal principalAdmin = () -> "admin";
+
+        mockMvc.perform(post("/api/movimientos")
+                        .principal(principalAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(3))
+                .andExpect(jsonPath("$.tipoMovimiento").value("AJUSTE_MERMA"))
+                .andExpect(jsonPath("$.cantidad").value(3))
+                .andExpect(jsonPath("$.stockAnterior").value(25))
+                .andExpect(jsonPath("$.stockPosterior").value(22))
+                .andExpect(jsonPath("$.motivo").value("Rotura de empaque en sector depósito A"));
+
+        verify(movimientoService, times(1)).registrarMovimiento(any(MovimientoRequestDTO.class), eq("admin"));
+    }
+
+    @Test
+    @DisplayName("HU-09: Rechazo de ajuste por merma cuando la cantidad supera el stock actual (HTTP 400)")
+    void registrarAjusteMerma_StockInsuficiente_Retorna400() throws Exception {
+        MovimientoRequestDTO request = new MovimientoRequestDTO();
+        request.setProductoId(10L);
+        request.setTipoMovimiento(TipoMovimiento.AJUSTE_MERMA);
+        request.setCantidad(40);
+        request.setMotivo("Pérdida total por rotura masiva");
+
+        when(movimientoService.registrarMovimiento(any(MovimientoRequestDTO.class), eq("admin")))
+                .thenThrow(new StockInsuficienteException(
+                        "Stock insuficiente para el producto 'Teclado Mecánico RGB'. Stock actual: 25, solicitado: 40"));
+
+        Principal principalAdmin = () -> "admin";
+
+        mockMvc.perform(post("/api/movimientos")
+                        .principal(principalAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Stock insuficiente"))
+                .andExpect(jsonPath("$.message").value("Stock insuficiente para el producto 'Teclado Mecánico RGB'. Stock actual: 25, solicitado: 40"));
+
+        verify(movimientoService, times(1)).registrarMovimiento(any(MovimientoRequestDTO.class), eq("admin"));
+    }
+
+    @Test
+    @DisplayName("HU-09: Registro exitoso de ajuste por sobrante incrementa existencias")
+    void registrarAjusteSobrante_Exitoso() throws Exception {
+        MovimientoRequestDTO request = new MovimientoRequestDTO();
+        request.setProductoId(10L);
+        request.setTipoMovimiento(TipoMovimiento.AJUSTE_SOBRANTE);
+        request.setCantidad(2);
+        request.setMotivo("Recuento físico mensual - hallazgo sector C");
+
+        MovimientoResponseDTO responseDTO = MovimientoResponseDTO.builder()
+                .id(4L)
+                .productoId(10L)
+                .productoNombre("Teclado Mecánico RGB")
+                .productoSku("PROD-001")
+                .usuarioId(1L)
+                .usuarioUsername("admin")
+                .tipoMovimiento(TipoMovimiento.AJUSTE_SOBRANTE)
+                .cantidad(2)
+                .stockAnterior(22)
+                .stockPosterior(24)
+                .motivo("Recuento físico mensual - hallazgo sector C")
+                .fechaMovimiento(LocalDateTime.now())
+                .build();
+
+        when(movimientoService.registrarMovimiento(any(MovimientoRequestDTO.class), eq("admin")))
+                .thenReturn(responseDTO);
+
+        Principal principalAdmin = () -> "admin";
+
+        mockMvc.perform(post("/api/movimientos")
+                        .principal(principalAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(4))
+                .andExpect(jsonPath("$.tipoMovimiento").value("AJUSTE_SOBRANTE"))
+                .andExpect(jsonPath("$.cantidad").value(2))
+                .andExpect(jsonPath("$.stockAnterior").value(22))
+                .andExpect(jsonPath("$.stockPosterior").value(24))
+                .andExpect(jsonPath("$.motivo").value("Recuento físico mensual - hallazgo sector C"));
+
+        verify(movimientoService, times(1)).registrarMovimiento(any(MovimientoRequestDTO.class), eq("admin"));
     }
 }

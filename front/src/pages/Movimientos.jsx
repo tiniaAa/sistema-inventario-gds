@@ -1,13 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../api/axios';
-import { ArrowUpRight, AlertCircle, PlusCircle, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUpRight, AlertCircle, PlusCircle, RefreshCw, ChevronLeft, ChevronRight, SlidersHorizontal } from 'lucide-react';
 import { Badge } from '../components/common/Badge';
 import { IngresoStockModal } from '../components/movimientos/IngresoStockModal';
 import { EgresoStockModal } from '../components/movimientos/EgresoStockModal';
+import { AjusteStockModal } from '../components/movimientos/AjusteStockModal';
+import { useAuth } from '../context/AuthContext';
 
 const PAGE_SIZE = 50;
 
 export const Movimientos = () => {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('ADMIN');
+
   const [movimientos, setMovimientos] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -16,6 +21,7 @@ export const Movimientos = () => {
   const [loadError, setLoadError] = useState('');
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
   const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
+  const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
   const formatFecha = (fecha) => {
@@ -76,6 +82,15 @@ export const Movimientos = () => {
     setTimeout(() => setFeedbackMsg(''), 6000);
   };
 
+  const handleAjusteSuccess = (nuevoMovimiento) => {
+    refreshAfterMovement();
+    const signo = nuevoMovimiento.tipoMovimiento === 'AJUSTE_SOBRANTE' ? '+' : '-';
+    setFeedbackMsg(
+      `Ajuste registrado con éxito: ${signo}${nuevoMovimiento.cantidad} u. para "${nuevoMovimiento.productoNombre || 'Producto'}" (Saldo actual: ${nuevoMovimiento.stockPosterior}).`
+    );
+    setTimeout(() => setFeedbackMsg(''), 6000);
+  };
+
   const getTipoBadge = (tipo) => {
     switch (tipo) {
       case 'INGRESO':
@@ -130,6 +145,24 @@ export const Movimientos = () => {
             <ArrowUpRight size={16} strokeWidth={1.75} />
             Egreso / Venta
           </button>
+          {isAdmin ? (
+            <button
+              onClick={() => setIsAjusteModalOpen(true)}
+              className="bg-[#f5f5f5] hover:bg-[#e5e5e5] text-[#0a0a0a] px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 transition-colors cursor-pointer"
+            >
+              <SlidersHorizontal size={16} strokeWidth={1.75} />
+              Ajuste de Stock
+            </button>
+          ) : (
+            <button
+              disabled
+              className="bg-[#f5f5f5] text-[#737373] opacity-40 px-4 py-2 rounded-[18px] text-[14px] font-medium flex items-center gap-2 cursor-not-allowed"
+              title="Solo los administradores pueden registrar ajustes de inventario"
+            >
+              <SlidersHorizontal size={16} strokeWidth={1.75} />
+              Ajuste de Stock
+            </button>
+          )}
           <button
             onClick={() => fetchMovimientos()}
             disabled={loading}
@@ -262,6 +295,13 @@ export const Movimientos = () => {
         isOpen={isEgresoModalOpen}
         onClose={() => setIsEgresoModalOpen(false)}
         onSuccess={handleEgresoSuccess}
+      />
+
+      {/* Modal para Ajuste Manual de Inventario (HU-09) */}
+      <AjusteStockModal
+        isOpen={isAjusteModalOpen}
+        onClose={() => setIsAjusteModalOpen(false)}
+        onSuccess={handleAjusteSuccess}
       />
     </div>
   );
