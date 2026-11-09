@@ -41,12 +41,12 @@
 | 8 | **Egreso de stock:** Como operador, quiero registrar la salida de mercadería con su motivo correspondiente (venta, traslado) para descontar existencias. | Alta | @tiniaAa | Terminada |
 | 9 | **Ajuste por merma/pérdida:** Como administrador, quiero registrar ajustes manuales por roturas o pérdidas justificadas para corregir desvíos con el stock real. | Media | @tiniaAa | Pendiente |
 | 10 | **Alertas de stock mínimo:** Como encargado, quiero ver un indicador visual de alerta cuando un ítem caiga por debajo de su umbral mínimo para ordenar reposición. | Alta | @iFaustoo | Terminada |
-| 11 | **Historial de movimientos:** Como administrador, quiero auditar el registro cronológico de entradas y salidas con usuario, fecha y motivo para controlar desvíos. | Media | @iFaustoo | Pendiente |
+| 11 | **Historial de movimientos:** Como administrador, quiero auditar el registro cronológico de entradas y salidas con usuario, fecha y motivo para controlar desvíos. | Media | @iFaustoo | Terminada |
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 9/12 funcionalidades terminadas (75.00% de progreso del backlog; 0 en proceso; 3 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 59 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 21 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP y HU-10 con 5 SP). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 10/12 funcionalidades terminadas (83.33% de progreso del backlog; 0 en proceso; 2 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 67 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 29 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP, HU-10 con 5 SP y HU-11 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
@@ -57,7 +57,7 @@
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
 *   **Tareas seleccionadas:** IDs 7, 8, 9, 10, 11, 12 (Total: 42 Story Points).
-*   **Estado:** En proceso (HU-07, HU-08 y HU-10 Terminadas; HU-09, HU-11 y HU-12 Pendientes).
+*   **Estado:** En proceso (HU-07, HU-08, HU-10 y HU-11 Terminadas; HU-09 y HU-12 Pendientes).
 
 ## 9. Posibles Problemas (Requisito: Mínimo 4)
 *   **Riesgo 1 (Concurrencia en actualización de stock):** Dos operadores registran egresos o ingresos simultáneos del mismo producto → **Consecuencia:** Inconsistencia de datos, saldo de stock negativo y condiciones de carrera (race conditions) en la base de datos → **Estrategia de mitigación:** Implementar transacciones de base de datos con bloqueo pesimista (`findByIdForUpdate` / `SELECT FOR UPDATE`) a nivel ORM, nivel de aislamiento serializable/read committed y restricciones relacionales de constraint (`CHECK (stock_actual >= 0)`).
@@ -73,6 +73,8 @@
 *   **Riesgo 11 (Incompatibilidad de runtime JDK con procesadores de anotaciones de Lombok):** Si el entorno local ejecuta Maven apuntando por defecto a un JDK experimental o superior (Java 26 en `.jdks`) en vez de la versión objetivo LTS (Java 17/21) → **Consecuencia:** Fallos masivos de compilación en compiladores de anotaciones (`cannot find symbol` en métodos autogenerados como `builder()` o getters) → **Estrategia de mitigación:** Declarar y forzar la variable `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"` en scripts de build locales y estandarizar la herramienta en la documentación del equipo.
 *   **Riesgo 12 (Ausencia de endpoint backend para métricas agregadas del Dashboard):** `Dashboard.jsx` consulta `GET /dashboard/metricas` mediante `Promise.allSettled`, pero dicho endpoint no existe aún en la API Spring Boot (404 Not Found silencioso) → **Consecuencia:** Las métricas numéricas generales de cabecera (`totalProductos`, `ingresosHoy`, `egresosHoy`) quedan en cero, aunque las alertas de stock crítico operan con normalidad → **Estrategia de mitigación:** Crear un `DashboardController` con consultas de agregación SQL (`COUNT`, `SUM` agrupadas por fecha) en las siguientes iteraciones.
 *   **Riesgo 13 (Vulnerabilidades en dependencias transitivas de npm):** La auditoría de dependencias (`npm ci`) reportó 5 vulnerabilidades en paquetes de desarrollo (3 moderadas, 2 altas) → **Consecuencia:** Exposición a vulnerabilidades conocidas en herramientas del entorno de empaquetado o librerías auxiliares → **Estrategia de mitigación:** Ejecutar `npm audit` selectivo y parchear dependencias transitivas sin romper compatibilidad con el bundler Vite.
+*   **Riesgo 14 (Desincronización de formatos de fecha en clientes por serialización como arreglo en Jackson):** Jackson serializa `LocalDateTime` por defecto como array numérico `[YYYY, MM, DD, HH, mm]` en lugar de cadena estándar ISO-8601 → **Consecuencia:** Parsers ingenuos en el frontend (`new Date(valor)`) fallan generando `"Invalid Date"`, degradando la legibilidad del historial de auditoría → **Estrategia de mitigación:** Función adaptadora de parsing dual (soporta tanto arreglos numéricos como ISO strings) en `Movimientos.jsx` y evaluar la estandarización global con `JavaTimeModule` en backend.
+*   **Riesgo 15 (Omisión de pruebas funcionales en entorno Staging previo a release):** HU-10 y HU-11 fueron validadas satisfactoriamente en local (MockMvc y build de Vite) pero no se verificaron en staging → **Consecuencia:** Riesgo latente de desajustes en variables de entorno, configuración CORS en la nube o discrepancias en la zona horaria del servidor PostgreSQL en hosting remoto → **Estrategia de mitigación:** Definir un checklist de despliegue y smoke testing en staging obligatorio antes de la presentación final.
 
 ## 10 y 13. Secuencias de Decisión y Cambios (Requisito: Mínimo 4)
 1.  **Decisión:** Migrar del almacenamiento directo de contraseñas a autenticación robusta mediante JWT con hash bcrypt y expiración de tokens.
@@ -199,6 +201,11 @@
     *   **Evidencia:** El componente `Dashboard.jsx` afirmaba mostrar alertas *"Actualizado en tiempo real"*, generando falsas expectativas de sincronización bidireccional continua (WebSockets/SSE); ante microcortes o demoras de red en `GET /productos/alertas`, el estado quedaba congelado sin mensajes de error ni mecanismo de recuperación manual para el operador.
     *   **Resultado:** Se modificó la leyenda a *"Datos al momento de la consulta"*, se incorporaron estados reactivos de carga (`alertasLoading`), aviso semántico de error con botón de reintento (`Reintentar`), y botón de refresco manual con rotación animada (`RefreshCw animate-spin`), validando además el endpoint en `ProductoControllerTest.java` con dos pruebas MockMvc para productos críticos y lista vacía (suite global de 56 tests verdes).
     *   **Aprendizaje:** Las interfaces de usuario deben comunicar con fidelidad el modelo de actualización subyacente (pull bajo demanda vs push reactivo); añadir estados de error semánticos con opciones de reintento incrementa la resiliencia operativa y reduce reportes espurios de fallas en depósito.
+
+26. **Decisión:** Paginación de auditoría con ordenamiento determinista compuesto (`fechaMovimiento DESC, id DESC`), resolución dual de fechas Jackson y saneamiento de argumentos en refresco.
+    *   **Evidencia:** Durante la implementación de la paginación de 50 ítems por página para HU-11, las pruebas de MockMvc arrojaron aserciones fallidas porque Jackson serializa instancias `LocalDateTime` como arrays numéricos enteros `[YYYY, MM, DD, HH, mm]`; ordenar exclusivamente por `fechaMovimiento` provocaba orden no determinista si múltiples registros compartían el mismo instante; además, en frontend el botón de refresco pasaba el evento sintético como número de página (`page=[object Object]`) y el formateador de fechas arrojaba `"Invalid Date"` ante arreglos numéricos.
+    *   **Resultado:** Se actualizaron las aserciones de prueba en `MovimientoStockControllerTest.java` (10 tests verdes), se refinó el método en `MovimientoStockRepository` a `findAllByOrderByFechaMovimientoDescIdDesc(Pageable)` para garantizar desempate determinista, y en `Movimientos.jsx` se introdujo un formateador resiliente (`formatFecha`) compatible con arrays e ISO strings, saneando a su vez el argumento `pageToLoad` ante eventos sintéticos en la llamada a `fetchMovimientos()`.
+    *   **Aprendizaje:** En consultas paginadas con alta tasa de inserción, siempre debe utilizarse un ordenamiento compuesto con la clave primaria (`id`) como criterio de desempate para evitar registros duplicados u omitidos entre páginas; simultáneamente, la serialización temporal debe manejarse con adaptadores defensivos en frontend para evitar inconsistencias de formato entre distintos serializadores JSON.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -430,7 +437,7 @@ front/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
         ├── Dashboard.jsx            # Hub operativo con alertas de stock crítico, refresco manual y reintento (HU-10)
         ├── Productos.jsx            # Catálogo con búsqueda, modal dual, modal de baja y control de rol (HU-02..05)
-        ├── Movimientos.jsx          # Historial, refresco y registro de ingresos y egresos con modales (HU-07, HU-08, HU-11)
+        ├── Movimientos.jsx          # Historial paginado (50/pág), auditoría con usuario/motivo, reintento y modales (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
         └── Reportes.jsx             # Módulo de exportación de inventario valorizado a CSV (HU-12)
 ```
@@ -478,7 +485,7 @@ back/
     │       │   ├── UsuarioRepository.java       # Consultas por username/email
     │       │   ├── CategoriaRepository.java     # Consultas de categorías activas, derivadas y por nombre case-insensitive
     │       │   ├── ProductoRepository.java      # Bloqueo pesimista, existsBySku, countByCategoriaIdAndActivoTrue, búsqueda por categoría/nombre/SKU, paginación
-    │       │   └── MovimientoStockRepository.java # Historial cronológico de movimientos
+    │       │   └── MovimientoStockRepository.java # Historial cronológico con orden descendente compuesto (fechaMovimiento, id)
     │       ├── dto/
     │       │   ├── request/
     │       │   │   ├── LoginRequest.java         # DTO con username y password validados
@@ -506,7 +513,7 @@ back/
         │   ├── ProductoControllerTest.java        # 22 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja, HU-05 búsqueda, HU-10 alertas)
         │   ├── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         │   ├── CategoriaControllerTest.java       # 17 tests MockMvc (HU-06 CRUD, reactivación, validaciones)
-        │   └── MovimientoStockControllerTest.java # 9 tests MockMvc (HU-07 ingreso, HU-08 egreso, saldos, paginación)
+        │   └── MovimientoStockControllerTest.java # 10 tests MockMvc (HU-07 ingreso, HU-08 egreso, HU-11 historial paginado/auditoría)
         └── resources/mockito-extensions/
             └── org.mockito.plugins.MockMaker      # Configuración de mock-maker para tests
 ```
