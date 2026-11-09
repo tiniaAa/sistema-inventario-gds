@@ -40,13 +40,13 @@
 | 7 | **Ingreso de stock:** Como operador, quiero registrar la entrada de unidades asociada a un remito o proveedor para sumar existencia física al sistema. | Alta | @tiniaAa | Terminada |
 | 8 | **Egreso de stock:** Como operador, quiero registrar la salida de mercadería con su motivo correspondiente (venta, traslado) para descontar existencias. | Alta | @tiniaAa | Terminada |
 | 9 | **Ajuste por merma/pérdida:** Como administrador, quiero registrar ajustes manuales por roturas o pérdidas justificadas para corregir desvíos con el stock real. | Media | @tiniaAa | Pendiente |
-| 10 | **Alertas de stock mínimo:** Como encargado, quiero ver un indicador visual de alerta cuando un ítem caiga por debajo de su umbral mínimo para ordenar reposición. | Alta | @iFaustoo | Pendiente |
+| 10 | **Alertas de stock mínimo:** Como encargado, quiero ver un indicador visual de alerta cuando un ítem caiga por debajo de su umbral mínimo para ordenar reposición. | Alta | @iFaustoo | Terminada |
 | 11 | **Historial de movimientos:** Como administrador, quiero auditar el registro cronológico de entradas y salidas con usuario, fecha y motivo para controlar desvíos. | Media | @iFaustoo | Pendiente |
 | 12 | **Exportación de inventario:** Como administrador, quiero exportar el listado de inventario valorizado a formato CSV para balances y presentaciones contables. | Baja | @iFaustoo | Pendiente |
 
 ## 5 y 12. Estimaciones e Indicadores
-*   **Indicador 1 (Avance general):** 8/12 funcionalidades terminadas (66.67% de progreso del backlog; 0 en proceso; 4 pendientes).
-*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 54 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 16 SP en Etapa 2: HU-07 con 8 SP y HU-08 con 8 SP). Desvío actual: 0% respecto a la planificación temporal.
+*   **Indicador 1 (Avance general):** 9/12 funcionalidades terminadas (75.00% de progreso del backlog; 0 en proceso; 3 pendientes).
+*   **Indicador 2 (Estimación vs Realidad):** Planificado: 80 Story Points (SP) totales distribuidos en 2 etapas. Consumidos a la fecha: 59 SP (38 SP en Etapa 1: HU-01 con 8 SP, HU-02 con 8 SP, HU-03 con 5 SP, HU-04 con 5 SP, HU-05 con 9 SP y HU-06 con 3 SP; 21 SP en Etapa 2: HU-07 con 8 SP, HU-08 con 8 SP y HU-10 con 5 SP). Desvío actual: 0% respecto a la planificación temporal.
 
 ## 6. Desarrollo en Etapas (Requisito: Mínimo 2)
 ### Etapa 1: Core del Sistema y Catálogo
@@ -57,7 +57,7 @@
 ### Etapa 2: Control Operativo, Movimientos y Reportes
 *   **Propósito:** Implementar la lógica transaccional de movimientos de stock, auditoría, alertas en tiempo real y módulo de reportes.
 *   **Tareas seleccionadas:** IDs 7, 8, 9, 10, 11, 12 (Total: 42 Story Points).
-*   **Estado:** En proceso (HU-07 y HU-08 Terminadas; HU-09, HU-10, HU-11 y HU-12 Pendientes).
+*   **Estado:** En proceso (HU-07, HU-08 y HU-10 Terminadas; HU-09, HU-11 y HU-12 Pendientes).
 
 ## 9. Posibles Problemas (Requisito: Mínimo 4)
 *   **Riesgo 1 (Concurrencia en actualización de stock):** Dos operadores registran egresos o ingresos simultáneos del mismo producto → **Consecuencia:** Inconsistencia de datos, saldo de stock negativo y condiciones de carrera (race conditions) en la base de datos → **Estrategia de mitigación:** Implementar transacciones de base de datos con bloqueo pesimista (`findByIdForUpdate` / `SELECT FOR UPDATE`) a nivel ORM, nivel de aislamiento serializable/read committed y restricciones relacionales de constraint (`CHECK (stock_actual >= 0)`).
@@ -71,6 +71,8 @@
 *   **Riesgo 9 (Opacidad de catálogo histórico de productos deshabilitados):** Las consultas de listado en `ProductoRepository` (`findByActivoTrue` y `searchActivos`) excluyen de forma permanente los registros inactivos → **Consecuencia:** Los administradores no disponen de una vista para auditar o supervisar el catálogo de productos históricos dados de baja → **Estrategia de mitigación:** Añadir un parámetro booleano `incluirInactivos` en los endpoints de catálogo y un selector de filtrado en la cabecera de la tabla de productos para usuarios con rol `ADMIN`.
 *   **Riesgo 10 (Sobrecarga de memoria por ausencia de paginación en colección de categorías):** El endpoint `GET /api/categorias` retorna la totalidad de entidades en memoria como `List<CategoriaResponseDTO>` sin paginación en servidor → **Consecuencia:** Degradación de tiempos de respuesta de red y saturación de memoria en el navegador cliente ante catálogos con cientos de categorías → **Estrategia de mitigación:** Implementar paginación del lado del servidor (*Server-Side Pagination*) utilizando `Pageable` y `Page<CategoriaResponseDTO>` en una futura iteración de optimización.
 *   **Riesgo 11 (Incompatibilidad de runtime JDK con procesadores de anotaciones de Lombok):** Si el entorno local ejecuta Maven apuntando por defecto a un JDK experimental o superior (Java 26 en `.jdks`) en vez de la versión objetivo LTS (Java 17/21) → **Consecuencia:** Fallos masivos de compilación en compiladores de anotaciones (`cannot find symbol` en métodos autogenerados como `builder()` o getters) → **Estrategia de mitigación:** Declarar y forzar la variable `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"` en scripts de build locales y estandarizar la herramienta en la documentación del equipo.
+*   **Riesgo 12 (Ausencia de endpoint backend para métricas agregadas del Dashboard):** `Dashboard.jsx` consulta `GET /dashboard/metricas` mediante `Promise.allSettled`, pero dicho endpoint no existe aún en la API Spring Boot (404 Not Found silencioso) → **Consecuencia:** Las métricas numéricas generales de cabecera (`totalProductos`, `ingresosHoy`, `egresosHoy`) quedan en cero, aunque las alertas de stock crítico operan con normalidad → **Estrategia de mitigación:** Crear un `DashboardController` con consultas de agregación SQL (`COUNT`, `SUM` agrupadas por fecha) en las siguientes iteraciones.
+*   **Riesgo 13 (Vulnerabilidades en dependencias transitivas de npm):** La auditoría de dependencias (`npm ci`) reportó 5 vulnerabilidades en paquetes de desarrollo (3 moderadas, 2 altas) → **Consecuencia:** Exposición a vulnerabilidades conocidas en herramientas del entorno de empaquetado o librerías auxiliares → **Estrategia de mitigación:** Ejecutar `npm audit` selectivo y parchear dependencias transitivas sin romper compatibilidad con el bundler Vite.
 
 ## 10 y 13. Secuencias de Decisión y Cambios (Requisito: Mínimo 4)
 1.  **Decisión:** Migrar del almacenamiento directo de contraseñas a autenticación robusta mediante JWT con hash bcrypt y expiración de tokens.
@@ -192,6 +194,11 @@
     *   **Evidencia:** Modificaciones de archivos Java mediante scripts estándar de PowerShell (`Set-Content`) provocaron corrupción en caracteres especiales y diacríticos acentuados (`Baja lÃ³gica`). Adicionalmente, el ejecutable `mvn` resolvía un runtime experimental de Java 26 presente en `.jdks`, bloqueando el plugin de Lombok y arrojando falsos errores de símbolos no encontrados.
     *   **Resultado:** Se revirtió la corrupción de encoding mediante control de versiones (`git checkout`), restringiendo ediciones a herramientas con soporte nativo UTF-8 sin BOM, y se estandarizó la ejecución de Maven forzando `$env:JAVA_HOME = "C:\Program Files\Java\jdk-17"`.
     *   **Aprendizaje:** La manipulación de código fuente en Windows exige herramientas que respeten estrictamente la codificación UTF-8 sin BOM; paralelamente, entornos con múltiples JDKs instalados requieren declarar unívocamente la versión LTS de desarrollo para garantizar compilaciones reproducibles.
+
+25. **Decisión:** Semántica honesta de consulta bajo demanda y estados de resiliencia (loading/error/retry) en Dashboard de Alertas.
+    *   **Evidencia:** El componente `Dashboard.jsx` afirmaba mostrar alertas *"Actualizado en tiempo real"*, generando falsas expectativas de sincronización bidireccional continua (WebSockets/SSE); ante microcortes o demoras de red en `GET /productos/alertas`, el estado quedaba congelado sin mensajes de error ni mecanismo de recuperación manual para el operador.
+    *   **Resultado:** Se modificó la leyenda a *"Datos al momento de la consulta"*, se incorporaron estados reactivos de carga (`alertasLoading`), aviso semántico de error con botón de reintento (`Reintentar`), y botón de refresco manual con rotación animada (`RefreshCw animate-spin`), validando además el endpoint en `ProductoControllerTest.java` con dos pruebas MockMvc para productos críticos y lista vacía (suite global de 56 tests verdes).
+    *   **Aprendizaje:** Las interfaces de usuario deben comunicar con fidelidad el modelo de actualización subyacente (pull bajo demanda vs push reactivo); añadir estados de error semánticos con opciones de reintento incrementa la resiliencia operativa y reduce reportes espurios de fallas en depósito.
 
 ## 18. Uso de Inteligencia Artificial
 *   **Herramienta:** Asistente LLM (Gemini / Antigravity).
@@ -421,7 +428,7 @@ front/
     │       └── EgresoStockModal.jsx  # Modal de egreso con validación de stock y advertencia de sobregiro (HU-08)
     └── pages/
         ├── Login.jsx                # Formulario de inicio de sesión con JWT
-        ├── Dashboard.jsx            # Hub operativo con recuadros interactivos y alertas de stock (HU-10)
+        ├── Dashboard.jsx            # Hub operativo con alertas de stock crítico, refresco manual y reintento (HU-10)
         ├── Productos.jsx            # Catálogo con búsqueda, modal dual, modal de baja y control de rol (HU-02..05)
         ├── Movimientos.jsx          # Historial, refresco y registro de ingresos y egresos con modales (HU-07, HU-08, HU-11)
         ├── Categorias.jsx           # Gestión de categorías para administradores (HU-06)
@@ -496,7 +503,7 @@ back/
     │           └── CategoriaController.java       # Endpoints /api/categorias (CRUD, reactivación, conteos)
     └── test/
         ├── java/com/inventario/gds/controller/
-        │   ├── ProductoControllerTest.java        # 20 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja, HU-05 búsqueda/listado)
+        │   ├── ProductoControllerTest.java        # 22 tests MockMvc (HU-02 alta, HU-03 edición, HU-04 baja, HU-05 búsqueda, HU-10 alertas)
         │   ├── AuthControllerTest.java            # 8 tests MockMvc (HU-01 login, credenciales, roles, DTOs)
         │   ├── CategoriaControllerTest.java       # 17 tests MockMvc (HU-06 CRUD, reactivación, validaciones)
         │   └── MovimientoStockControllerTest.java # 9 tests MockMvc (HU-07 ingreso, HU-08 egreso, saldos, paginación)
