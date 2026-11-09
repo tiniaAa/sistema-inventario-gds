@@ -19,6 +19,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import java.util.List;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -27,6 +33,7 @@ import java.security.Principal;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,6 +67,7 @@ class ProductoControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(productoController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
@@ -648,7 +656,7 @@ class ProductoControllerTest {
         List<Producto> contenido = List.of(p1);
         Page<Producto> pagina = new PageImpl<>(contenido, PageRequest.of(0, 10), 1);
 
-        when(productoRepository.searchActivos("mouse", any(Pageable.class))).thenReturn(pagina);
+        when(productoRepository.searchActivos(eq("mouse"), any(Pageable.class))).thenReturn(pagina);
 
         mockMvc.perform(get("/api/productos")
                 .param("page", "0")
@@ -659,7 +667,7 @@ class ProductoControllerTest {
                 .andExpect(jsonPath("$.content[0].nombre").value("Mouse Inalámbrico"))
                 .andExpect(jsonPath("$.totalElements").value(1));
 
-        verify(productoRepository, times(1)).searchActivos("mouse", any(Pageable.class));
+        verify(productoRepository, times(1)).searchActivos(eq("mouse"), any(Pageable.class));
         verify(productoRepository, never()).findByActivoTrue(any(Pageable.class));
     }
 }
