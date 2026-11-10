@@ -55,27 +55,6 @@ En el comercio minorista tradicional, la gestión de existencias suele realizars
 
 ---
 
-## 🚀 Funcionalidades Principales
-
-El proyecto cumplió el **100% de su backlog planificado (12 de 12 Historias de Usuario, 80 Story Points)**:
-
-| ID | Módulo / Historia de Usuario | Rol | Prioridad | Estado |
-| :--- | :--- | :--- | :---: | :---: |
-| **HU-01** | **Autenticación y Seguridad:** Login seguro con JWT firmado (HMAC-SHA256) y perfiles `ADMIN` y `OPERADOR`. | Todos | Alta | **Terminada** |
-| **HU-02** | **Alta de Productos:** Registro con nombre, SKU único, categoría, precio y vinculación transaccional de stock inicial. | Operador | Alta | **Terminada** |
-| **HU-03** | **Modificación Comercial:** Edición de datos y precios con validación idempotente de SKU y blindaje de existencias. | Operador | Media | **Terminada** |
-| **HU-04** | **Baja Lógica (Soft Delete):** Inhabilitación de ítems obsoletos (`activo = false`) preservando auditorías pasadas. | Admin | Media | **Terminada** |
-| **HU-05** | **Búsqueda y Paginación Server-Side:** Filtrado insensible a mayúsculas por nombre, SKU o categoría con `Pageable`. | Todos | Alta | **Terminada** |
-| **HU-06** | **Gestión de Categorías:** CRUD completo de familias de artículos con validación de unicidad de nombres. | Admin | Baja | **Terminada** |
-| **HU-07** | **Ingreso Transaccional de Stock:** Entrada de unidades asociada a remito o proveedor con auditoría inmutable. | Operador | Alta | **Terminada** |
-| **HU-08** | **Egreso con Prevención de Saldo Negativo:** Salida de mercadería con validación pesimista y cálculo de stock proyectado. | Operador | Alta | **Terminada** |
-| **HU-09** | **Ajuste Manual por Merma o Sobrante:** Formulario dual (`AJUSTE_MERMA` / `AJUSTE_SOBRANTE`) exclusivo para Administrador. | Admin | Media | **Terminada** |
-| **HU-10** | **Dashboard de Alertas:** Panel reactivo con semántica bajo demanda para productos con `stock_actual <= stock_minimo`. | Encargado | Alta | **Terminada** |
-| **HU-11** | **Historial Paginado de Auditoría:** Grilla de 50 registros por página con orden determinista (`fecha DESC, id DESC`). | Admin | Media | **Terminada** |
-| **HU-12** | **Exportación Contable a CSV:** Descarga streaming con compatibilidad nativa para Excel (BOM UTF-8) y mitigación de Formula Injection. | Admin | Baja | **Terminada** |
-
----
-
 ## 🏗 Arquitectura y Stack Tecnológico
 
 ```
@@ -262,20 +241,6 @@ npm run build
 ```
 *Transformación limpia de 1559 módulos en ~10 segundos con cero errores de compilación.*
 
----
-
-## 📊 Metodología y Gestión del Desarrollo
-
-El equipo aplicó un proceso ágil de ingeniería de software orientado a la trazabilidad y la mejora continua:
-
-* **Desarrollo en 2 Etapas:**
-  * **Etapa 1 (Core y Catálogo):** HU-01 a HU-06 (38 Story Points).
-  * **Etapa 2 (Movimientos, Alertas y Reportes):** HU-07 a HU-12 (42 Story Points).
-* **Estrategia Git Flow:** Trabajo en ramas cortas por funcionalidad (`feature/HU-xx`) y fusiones a `main` mediante Pull Requests tras revisión de código cruzada.
-* **Definition of Done (DoD):** Checklist estricto de 7 criterios (validación en doble capa, tests verdes, transacciones ACID, build sin errores y code review).
-* **Gestión del Cambio:** Sustitución estratégica de reportes PDF por exportación streaming a CSV sanitizado con BOM UTF-8, garantizando entrega en tiempo y forma.
-
----
 
 ## 👥 Integrantes del Equipo
 
@@ -293,5 +258,4 @@ Trabajo realizado por estudiantes de la **Tecnicatura Universitaria en Programac
 
 * **Repositorio GitHub:** [https://github.com/tiniaAa/sistema-inventario-gds](https://github.com/tiniaAa/sistema-inventario-gds)
 * **Tablero de Hitos y Tareas:** [GitHub Milestones (100% completado)](https://github.com/tiniaAa/sistema-inventario-gds/milestones)
-* **Video de Defensa Oral:** [https://youtu.be/StockMaster-UTN-GDS-2026](https://youtu.be/StockMaster-UTN-GDS-2026)
 * **Bitácora Completa y Decisiones:** Consulta el archivo [`contexto.md`](contexto.md) para acceder al historial exhaustivo de decisiones arquitectónicas y aprendizajes del equipo.
